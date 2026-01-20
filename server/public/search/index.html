@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <title>运营商验真查询</title>
+    <link rel="stylesheet" href="style.css?version=1.0.03">
+    <script src="region-data.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo-wrapper">
+        <img src="https://qncdn.shwdsg.com/haier/logo.png" alt="Haier" class="logo">
+    </div>
+    <div id="searchView">
+        <div class="header">
+            <img src="https://qncdn.shwdsg.com/haier/title.png" alt="运营商验真查询" class="title-img">
+            <h1>运营商验真查询</h1>
+            <p>支持按照运营商名称关键词、任意关键词及省市区搜索</p>
+        </div>
+
+        <div class="search-panel">
+            <div class="form-group">
+                <label>运营商名称关键词搜索</label>
+                <input type="text" id="nameInput" class="form-control" placeholder="名称关键词或者任意关键词搜索">
+            </div>
+            <div class="form-group region-selector">
+                <label>地区筛选</label>
+                <input type="text" id="regionInput" class="form-control" placeholder="区域筛选搜索" readonly>
+                <div id="regionDropdown" class="region-dropdown">
+                    <div class="region-tabs" id="regionTabs">
+                        <div class="region-tab active" data-level="province">省份</div>
+                        <div class="region-tab" data-level="city">城市</div>
+                        <div class="region-tab" data-level="district">区/县</div>
+                    </div>
+                    <div class="region-content">
+                        <div id="regionList" class="region-list"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="handleSearch()">查询</button>
+                <button class="btn btn-secondary" onclick="handleReset()">重置</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultView" style="display: none;">
+        <div class="result-header">
+            <div class="en-title">SEARCH RESULT</div>
+            <h2>查询结果</h2>
+            <div class="header-underline"></div>
+        </div>
+        <div class="result-scroll-area">
+            <div id="resultContainer" class="result-list">
+                <!-- 结果将在这里渲染 -->
+            </div>
+        </div>
+        <div class="result-footer">
+            <button class="btn btn-primary return-btn" onclick="handleReturn()">返回</button>
+        </div>
+    </div>
+</div>
+<script>
+    // 运营商数据
+    let operatorData = [];
+
+    // 获取数据
+    async function fetchOperatorData() {
+        try {
+            const response = await fetch('https://haier.shwdsg.com/api/operator/all');
+            const res = await response.json();
+            if (res.code === 1) {
+                operatorData = res.data;
+            }
+        } catch (error) {
+            console.error('获取数据失败:', error);
+        }
+    }
+
+    // DOM 元素
+    const nameInput = document.getElementById('nameInput');
+    const regionInput = document.getElementById('regionInput');
+    const regionDropdown = document.getElementById('regionDropdown');
+    const regionList = document.getElementById('regionList');
+    const regionTabs = document.getElementById('regionTabs');
+    const resultContainer = document.getElementById('resultContainer');
+    const searchView = document.getElementById('searchView');
+    const resultView = document.getElementById('resultView');
+
+    // 状态
+    let selectedRegion = { province: '', city: '', district: '' };
+    let currentTab = 'province'; // province, city, district
+
+    // 初始化
+    window.onload = () => {
+        initCascader();
+        fetchOperatorData();
+    };
+
+    // 初始化级联选择器
+    function initCascader() {
+        // 渲染初始省份列表
+        renderProvinces();
+
+        // 输入框点击事件
+        regionInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+            regionDropdown.classList.toggle('show');
+        });
+
+        // 点击外部关闭
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.region-selector')) {
+                regionDropdown.classList.remove('show');
+            }
+        });
+
+        // Tab 切换
+        regionTabs.addEventListener('click', (e) => {
+            if (e.target.classList.contains('region-tab')) {
+                const level = e.target.dataset.level;
+                switchTab(level);
+            }
+        });
+
+        // 搜索框回车
+        nameInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') handleSearch();
+        });
+    }
+
+    // 切换 Tab
+    function switchTab(level) {
+        currentTab = level;
+        
+        // 更新 Tab 样式
+        Array.from(regionTabs.children).forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.level === level);
+        });
+
+        // 根据 Tab 渲染内容
+        if (level === 'province') {
+            renderProvinces();
+        } else if (level === 'city') {
+            if (selectedRegion.province) {
+                renderCities(selectedRegion.province);
+            } else {
+                regionList.innerHTML = '<div style="color:#999; padding:10px;">请先选择省份</div>';
+            }
+        } else if (level === 'district') {
+            if (selectedRegion.city) {
+                renderDistricts(selectedRegion.province, selectedRegion.city);
+            } else {
+                regionList.innerHTML = '<div style="color:#999; padding:10px;">请先选择城市</div>';
+            }
+        }
+    }
+
+    // 渲染省份
+    function renderProvinces() {
+        regionList.innerHTML = '';
+        Object.keys(regionData).forEach(province => {
+            const item = document.createElement('div');
+            item.className = `region-item ${selectedRegion.province === province ? 'selected' : ''}`;
+            item.textContent = province;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                selectedRegion.province = province;
+                selectedRegion.city = '';
+                selectedRegion.district = '';
+                updateInputValue();
+                switchTab('city');
+            };
+            regionList.appendChild(item);
+        });
+    }
+
+    // 渲染城市
+    function renderCities(province) {
+        regionList.innerHTML = '';
+        const cities = regionData[province] ? Object.keys(regionData[province]) : [];
+        cities.forEach(city => {
+            const item = document.createElement('div');
+            item.className = `region-item ${selectedRegion.city === city ? 'selected' : ''}`;
+            item.textContent = city;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                selectedRegion.city = city;
+                selectedRegion.district = '';
+                updateInputValue();
+                switchTab('district');
+            };
+            regionList.appendChild(item);
+        });
+    }
+
+    // 渲染区县
+    function renderDistricts(province, city) {
+        regionList.innerHTML = '';
+        const districts = regionData[province] && regionData[province][city] ? regionData[province][city] : [];
+        districts.forEach(district => {
+            const item = document.createElement('div');
+            item.className = `region-item ${selectedRegion.district === district ? 'selected' : ''}`;
+            item.textContent = district;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                selectedRegion.district = district;
+                updateInputValue();
+                regionDropdown.classList.remove('show');
+                handleSearch(); // 触发搜索
+            };
+            regionList.appendChild(item);
+        });
+    }
+
+    // 更新输入框显示
+    function updateInputValue() {
+        const parts = [];
+        if (selectedRegion.province) parts.push(selectedRegion.province);
+        if (selectedRegion.city) parts.push(selectedRegion.city);
+        if (selectedRegion.district) parts.push(selectedRegion.district);
+        regionInput.value = parts.join(' / ');
+    }
+
+    // 搜索逻辑
+    function handleSearch() {
+        const nameVal = nameInput.value.trim().toLowerCase();
+        const filteredData = operatorData.filter(item => {
+            const itemStr = JSON.stringify(item).toLowerCase();
+
+            const matchName = nameVal && itemStr.includes(nameVal);
+            const matchProvince = selectedRegion.province && itemStr.includes(selectedRegion.province.toLowerCase());
+            const matchCity = selectedRegion.city && itemStr.includes(selectedRegion.city.toLowerCase());
+            const matchDistrict = selectedRegion.district && itemStr.includes(selectedRegion.district.toLowerCase());
+
+            if (!nameVal && !selectedRegion.province && !selectedRegion.city && !selectedRegion.district) {
+                return true;
+            }
+
+            return matchName || matchProvince || matchCity || matchDistrict;
+        });
+
+        renderList(filteredData);
+    }
+
+    // 重置逻辑
+    function handleReset() {
+        nameInput.value = '';
+        selectedRegion = { province: '', city: '', district: '' };
+        updateInputValue();
+        switchTab('province');
+        resultContainer.innerHTML = '';
+    }
+
+    // 渲染列表
+    function renderList(data) {
+        resultContainer.innerHTML = '';
+
+        // Switch to result view
+        searchView.style.display = 'none';
+        resultView.style.display = 'flex'; // Changed to flex for layout
+
+        if (data.length === 0) {
+            resultContainer.innerHTML = `
+                <div class="empty-state">
+                    <p>当前，暂未查询到相关运营商信息！建议您返回查询首页，重新输入关键词进行搜索。</p>
+                </div>
+            `;
+            return;
+        }
+
+        data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            
+            const provinceText = item.province;
+            // 处理地址中的引号，确保 HTML 属性安全
+            const addressSafe = (item.address || '').replace(/"/g, '&quot;');
+            
+            const contactInfo = `${item.contact || '未知'} ${item.phone || ''}`;
+            const contactSafe = contactInfo.replace(/"/g, '&quot;');
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <h3>${highlightText(item.name, nameInput.value)}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="province-tag">${provinceText}</div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-icon"><img src="image/icon1.png" alt="address"></span>
+                            <span>${item.address}</span>
+                            <span class="copy-btn" data-content="${addressSafe}" onclick="copyToClipboard(this.dataset.content)">复制</span>
+                        </div>
+                        <div class="detail-row">
+                             <span class="detail-icon"><img src="image/icon2.png" alt="contact"></span>
+                             <span>${contactInfo}</span>
+                             <span class="copy-btn" data-content="${contactSafe}" onclick="copyToClipboard(this.dataset.content)">复制</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-icon"><img src="image/icon3.png" alt="solution"></span>
+                            <span>${item.scope || '海尔新能源墅式场景解决方案'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            resultContainer.appendChild(card);
+        });
+    }
+
+    // 复制到剪贴板
+    function copyToClipboard(text) {
+        if (!text) return;
+        
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('复制成功');
+            }).catch(err => {
+                console.error('无法复制', err);
+                fallbackCopy(text);
+            });
+        } else {
+            fallbackCopy(text);
+        }
+    }
+
+    function fallbackCopy(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                showToast('复制成功');
+            } else {
+                showToast('复制失败，请手动复制');
+            }
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+            showToast('复制失败，请手动复制');
+        }
+        
+        document.body.removeChild(textArea);
+    }
+
+    function showToast(message) {
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2000);
+    }
+
+    function handleReturn() {
+        searchView.style.display = 'block';
+        resultView.style.display = 'none';
+        // Optional: Reset search input or keep it?
+        // Let's keep the state so user can modify search.
+    }
+
+    // 关键词高亮
+    function highlightText(text, keyword) {
+        if (!keyword) return text;
+        const regex = new RegExp(`(${keyword})`, 'gi');
+        return text.replace(regex, '<span style="color: #4e6ef2; font-weight: bold;">$1</span>');
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,378 @@
+:root {
+    --primary-blue: #4aa3ff;
+    --light-blue-bg: #e6f4ff;
+    --primary-red: #ff3355;
+    --light-red-bg: #fff0f3;
+    --dark-text: #1a1a1a;
+    --gray-text: #888888;
+    --border-radius: 16px;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background: linear-gradient(180deg, #4aa3ff 0%, #7bc0ff 40%, #eef7ff 100%);
+    min-height: 100vh;
+    color: var(--dark-text);
+}
+
+.app-container {
+    max-width: 480px; /* Mobile width cap */
+    margin: 0 auto;
+    padding-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Header */
+.page-header {
+    padding: 10px 16px;
+    color: #fff;
+    position: relative;
+    height: 300px; /* Space for banner */
+}
+
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.back-btn svg {
+    color: #000; /* Based on image, back arrow looks black or dark */
+}
+
+.logo-area {
+    font-weight: bold;
+    font-size: 16px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.banner-content {
+    margin-top: 20px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.title-area h1 {
+    font-size: 32px;
+    font-style: italic;
+    font-weight: 900;
+    color: #000;
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+}
+
+.activity-time {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #000;
+    font-weight: 500;
+}
+
+.illustration-placeholder {
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    font-size: 60px;
+}
+
+/* Main Card */
+.main-card {
+    background: #fff;
+    border-radius: 24px 24px 0 0;
+    margin-top: -40px; /* Overlap header */
+    padding: 20px;
+    min-height: 500px;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+}
+
+/* Sign In Header */
+.sign-in-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.sign-in-info h2 {
+    font-size: 18px;
+    margin-bottom: 4px;
+}
+
+.highlight-blue {
+    color: #4aa3ff;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.sub-info {
+    font-size: 12px;
+    color: var(--gray-text);
+}
+
+.highlight-orange {
+    color: #ff8800;
+    font-weight: bold;
+    margin: 0 2px;
+}
+
+.points-badge {
+    background: #eef7ff;
+    color: #4aa3ff;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Calendar Grid */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 columns */
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+/* General Day Cell */
+.day-cell {
+    background: #f5f7fa;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 5px;
+    min-height: 90px;
+    position: relative;
+}
+
+.day-cell .bonus {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--gray-text);
+}
+
+.status-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    margin-bottom: 5px;
+    background: #e0e0e0;
+    color: #fff;
+}
+
+.day-cell .date {
+    font-size: 11px;
+    color: var(--gray-text);
+}
+
+/* Signed State */
+.day-cell.signed {
+    background: var(--light-red-bg);
+}
+
+.day-cell.signed .bonus {
+    color: var(--primary-red);
+}
+
+.day-cell.signed .status-icon.check {
+    background: transparent;
+    border: 2px solid var(--primary-red);
+    color: var(--primary-red);
+    font-weight: bold;
+}
+
+/* Active State (Today) */
+.day-cell.active {
+    background: linear-gradient(135deg, #ff5e7e, #ff2b55);
+    color: white;
+    box-shadow: 0 4px 10px rgba(255, 43, 85, 0.3);
+}
+
+.day-cell.active .bonus {
+    color: white;
+}
+
+.day-cell.active .status-icon.check {
+    background: white;
+    color: var(--primary-red);
+}
+
+.day-cell.active .date {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Missed / Retroactive State */
+.day-cell.missed-retro {
+    background: white;
+    border: 2px dashed var(--primary-red);
+    padding: 0;
+}
+
+.retro-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.retro-content .bonus {
+    color: var(--primary-red);
+    font-size: 12px;
+    margin-bottom: 2px;
+}
+
+.retro-content .status-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    background: #eee;
+    color: #ccc;
+    margin-bottom: 4px;
+}
+
+.retro-btn {
+    background: var(--primary-red);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+/* Wide Cell for Day 7 */
+.day-cell.wide {
+    grid-column: span 2; /* Span 2 columns */
+}
+
+/* Future State */
+.day-cell.future .status-icon.pending {
+    background: #dbe4ef;
+    color: white;
+}
+
+/* Rewards Section */
+.rewards-section {
+    background: #f9fbff;
+    border-radius: 16px;
+    padding: 16px;
+}
+
+.section-header {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: baseline;
+}
+
+.section-header .title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #335;
+    margin-right: 8px;
+}
+
+.section-header .subtitle {
+    font-size: 11px;
+    color: var(--gray-text);
+}
+
+.progress-track-container {
+    position: relative;
+    padding-top: 10px;
+}
+
+.progress-bar-background {
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    position: relative;
+    top: 12px; /* Center with icons */
+    z-index: 1;
+    margin: 0 20px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff5e7e, #ff2b55);
+    border-radius: 3px;
+    width: 0;
+}
+
+.milestone-markers {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+    margin-top: -14px; /* Pull up to overlay bar */
+}
+
+.milestone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    width: 60px; /* Fixed width for alignment */
+}
+
+.milestone-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #ccc;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    margin-bottom: 6px;
+    border: 2px solid white;
+}
+
+.milestone.achieved .milestone-icon {
+    background: var(--primary-red);
+}
+
+.milestone-badge {
+    background: #eef2f9;
+    color: #668;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+}
+
+.milestone-label {
+    font-size: 11px;
+    color: var(--gray-text);
+}
+
+/* Fix positioning of middle milestones */
+.milestone:first-child { align-items: flex-start; margin-left: -5px; }
+.milestone:last-child { align-items: flex-end; margin-right: -5px; }
+.milestone:nth-child(2) { align-items: center; }

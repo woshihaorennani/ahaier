@@ -1,0 +1,1 @@
+var l,u;function c(){return u||(u=1,l=function(n,a,e){for(var s=0,t={},r=0;r<e.length;r++)if(n==e.substr(r,n.length))"start"in t||(t.start=r),s++;else if(a==e.substr(r,a.length)&&"start"in t&&(s--,!s))return t.end=r,t.pre=e.substr(0,t.start),t.body=t.end-t.start>1?e.substring(t.start+n.length,t.end):"",t.post=e.slice(t.end+a.length),t}),l}export{c as r};

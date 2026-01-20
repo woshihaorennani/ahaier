@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>签到得简历点</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="page-header">
+            <div class="status-bar-placeholder"></div>
+            <div class="nav-bar">
+                <div class="back-btn">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </div>
+                <!-- Assuming the logo is an image or text, using text for now -->
+                <div class="logo-area">
+                    <span>👥 快手 · 🈸 快聘</span>
+                </div>
+                <div class="action-btn"></div> <!-- Placeholder for right alignment -->
+            </div>
+            
+            <div class="banner-content">
+                <div class="title-area">
+                    <h1>签到得简历点</h1>
+                    <div class="activity-time">活动时间：3月1日-4月20日</div>
+                </div>
+                <!-- Illustration would go here -->
+                <div class="illustration-placeholder">
+                    <!-- Representing the calendar/pen graphic with CSS/Emoji or SVG if needed, using a div for spacing now -->
+                    <div class="calendar-graphic">
+                        📅 🖊️
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Card -->
+        <main class="main-card">
+            <div class="sign-in-header">
+                <div class="sign-in-info">
+                    <h2>您已连续签到 <span class="highlight-blue">1</span> 天</h2>
+                    <p class="sub-info">本周还剩<span class="highlight-orange">3</span>次补签机会</p>
+                </div>
+                <div class="points-badge">
+                    已得简历点: <span class="points-value">236</span>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="calendar-grid">
+                <!-- Day 1: Signed -->
+                <div class="day-cell signed">
+                    <div class="bonus">+2</div>
+                    <div class="status-icon check">✓</div>
+                    <div class="date">3月3日</div>
+                </div>
+                <!-- Day 2: Signed -->
+                <div class="day-cell signed">
+                    <div class="bonus">+2</div>
+                    <div class="status-icon check">✓</div>
+                    <div class="date">3月4日</div>
+                </div>
+                <!-- Day 3: Missed / Retroactive -->
+                <div class="day-cell missed-retro">
+                    <div class="retro-content">
+                        <div class="bonus">+10</div>
+                        <div class="status-icon empty">✓</div>
+                        <button class="retro-btn">补签</button>
+                    </div>
+                </div>
+                <!-- Day 4: Active/Today (Red) -->
+                <div class="day-cell active">
+                    <div class="bonus">+2</div>
+                    <div class="status-icon check">✓</div>
+                    <div class="date">3月6日</div>
+                </div>
+                <!-- Day 5: Future -->
+                <div class="day-cell future">
+                    <div class="bonus">+2</div>
+                    <div class="status-icon pending">✓</div>
+                    <div class="date">3月7日</div>
+                </div>
+                <!-- Day 6: Future -->
+                <div class="day-cell future">
+                    <div class="bonus">+2</div>
+                    <div class="status-icon pending">✓</div>
+                    <div class="date">3月8日</div>
+                </div>
+                <!-- Day 7: Big Future -->
+                <div class="day-cell future wide">
+                    <div class="bonus">+20</div>
+                    <div class="status-icon pending">✓</div>
+                    <div class="date">3月9日</div>
+                </div>
+            </div>
+
+            <!-- Consecutive Rewards -->
+            <div class="rewards-section">
+                <div class="section-header">
+                    <span class="title">连签奖励</span>
+                    <span class="subtitle">连续签到可获得以下奖励</span>
+                </div>
+                
+                <div class="progress-track-container">
+                    <div class="progress-bar-background">
+                        <div class="progress-bar-fill" style="width: 15%;"></div>
+                    </div>
+                    
+                    <div class="milestone-markers">
+                        <!-- Milestone 1 -->
+                        <div class="milestone achieved">
+                            <div class="milestone-icon">✓</div>
+                            <div class="milestone-label">第1天</div>
+                        </div>
+                        
+                        <!-- Milestone 2 -->
+                        <div class="milestone future">
+                            <div class="milestone-badge">10万简历点</div>
+                            <div class="milestone-label">第3天</div>
+                        </div>
+                        
+                        <!-- Milestone 3 -->
+                        <div class="milestone future">
+                            <div class="milestone-badge">20万简历点</div>
+                            <div class="milestone-label">第7天</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
