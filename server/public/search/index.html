@@ -228,9 +228,11 @@
     function handleSearch() {
         const nameVal = nameInput.value.trim().toLowerCase();
         const filteredData = operatorData.filter(item => {
+            const { address, ...rest } = item;
             const itemStr = JSON.stringify(item).toLowerCase();
+            const restStr = JSON.stringify(rest).toLowerCase();
 
-            const matchName = nameVal && itemStr.includes(nameVal);
+            const matchName = nameVal && restStr.includes(nameVal);
             const matchProvince = selectedRegion.province && itemStr.includes(selectedRegion.province.toLowerCase());
             const matchCity = selectedRegion.city && itemStr.includes(selectedRegion.city.toLowerCase());
             const matchDistrict = selectedRegion.district && itemStr.includes(selectedRegion.district.toLowerCase());
