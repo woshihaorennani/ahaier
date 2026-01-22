@@ -228,7 +228,7 @@
     function handleSearch() {
         const nameVal = nameInput.value.trim().toLowerCase();
         const filteredData = operatorData.filter(item => {
-            const { address, ...rest } = item;
+            const { address, email, create_time, id, sort, status, ...rest } = item;
             const itemStr = JSON.stringify(item).toLowerCase();
             const restStr = JSON.stringify(rest).toLowerCase();
 
@@ -298,7 +298,7 @@
                         </div>
                         <div class="detail-row">
                              <span class="detail-icon"><img src="image/icon2.png" alt="contact"></span>
-                             <span>${contactInfo}</span>
+                             <span>${highlightText(contactInfo, nameInput.value)}</span>
                              <span class="copy-btn" data-content="${contactSafe}" onclick="copyToClipboard(this.dataset.content)">复制</span>
                         </div>
                         <div class="detail-row">
