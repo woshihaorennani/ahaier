@@ -25,7 +25,7 @@ use app\api\validate\WechatValidate;
  */
 class WechatController extends BaseApiController
 {
-    public array $notNeedLogin = ['jsConfig'];
+    public array $notNeedLogin = ['jsConfig', 'silentAuth', 'silentCodeUrl'];
 
 
     /**
@@ -42,5 +42,32 @@ class WechatController extends BaseApiController
             return $this->fail(WechatLogic::getError(), [], 0, 0);
         }
         return $this->data($result);
+    }
+
+    /**
+     * @notes 订阅号静默授权，获取openid并返回用户数据
+     * @return \think\response\Json
+     */
+    public function silentAuth()
+    {
+        $params = (new WechatValidate())->goCheck('silentAuth');
+        $code = $params['code'];
+        $result = WechatLogic::silentAuth($code);
+        if ($result === false) {
+            return $this->fail(WechatLogic::getError(), [], 0, 0);
+        }
+        return $this->data($result);
+    }
+
+    /**
+     * @notes 获取静默授权跳转url
+     * @return \think\response\Json
+     */
+    public function silentCodeUrl()
+    {
+        $params = (new WechatValidate())->goCheck('silentCodeUrl');
+        $url = $params['url'];
+        $result = ['url' => WechatLogic::silentCodeUrl($url)];
+        return $this->success('获取成功', $result);
     }
 }

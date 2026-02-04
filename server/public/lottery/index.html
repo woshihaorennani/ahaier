@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信静默授权</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .loading {
+            color: #666;
+        }
+        .error {
+            color: #ff4d4f;
+        }
+        .success {
+            color: #52c41a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="status" class="loading">正在加载...</div>
+        <div id="content"></div>
+    </div>
+
+    <script>
+        // API Base URL - adjust if necessary
+        const API_BASE = '/api';
+
+        // Helper to get query param
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Helper for API calls
+        async function apiCall(endpoint, params = {}) {
+            const url = new URL(`${API_BASE}${endpoint}`, window.location.origin);
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            return data;
+        }
+
+        async function init() {
+            const code = getQueryParam('code');
+            const statusEl = document.getElementById('status');
+            const contentEl = document.getElementById('content');
+
+            if (code) {
+                // Have code, exchange for user info
+                statusEl.textContent = '正在授权...';
+                try {
+                    const res = await apiCall('/wechat/silentAuth', { code });
+                    if (res.code === 1) {
+                        statusEl.className = 'success';
+                        statusEl.textContent = '授权成功';
+                        // Display user info or proceed
+                        contentEl.innerHTML = `
+                            <p>OpenID: ${res.data.openid}</p>
+                            <p>你好，${res.data.nickname || '用户'}</p>
+                        `;
+                        // You can save token to localStorage here if needed
+                        // localStorage.setItem('token', res.data.token);
+                    } else {
+                        statusEl.className = 'error';
+                        statusEl.textContent = '授权失败: ' + res.msg;
+                    }
+                } catch (e) {
+                    statusEl.className = 'error';
+                    statusEl.textContent = '请求出错: ' + e.message;
+                }
+            } else {
+                // No code, get redirect URL
+                statusEl.textContent = '正在跳转微信授权...';
+                try {
+                    const currentUrl = window.location.href;
+                    const res = await apiCall('/wechat/silentCodeUrl', { url: currentUrl });
+                    if (res.code === 1 && res.data.url) {
+                        window.location.href = res.data.url;
+                    } else {
+                        statusEl.className = 'error';
+                        statusEl.textContent = '获取跳转链接失败: ' + res.msg;
+                    }
+                } catch (e) {
+                    statusEl.className = 'error';
+                    statusEl.textContent = '请求出错: ' + e.message;
+                }
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

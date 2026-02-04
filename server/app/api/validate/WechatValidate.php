@@ -24,14 +24,26 @@ use app\common\validate\BaseValidate;
 class WechatValidate extends BaseValidate
 {
     public $rule = [
-        'url' => 'require'
+        'url' => 'require',
+        'code' => 'require'
     ];
 
     public $message = [
-        'url.require' => '请提供url'
+        'url.require' => '请提供url',
+        'code.require' => '请提供code'
     ];
 
     public function sceneJsConfig()
+    {
+        return $this->only(['url']);
+    }
+
+    public function sceneSilentAuth()
+    {
+        return $this->only(['code']);
+    }
+
+    public function sceneSilentCodeUrl()
     {
         return $this->only(['url']);
     }

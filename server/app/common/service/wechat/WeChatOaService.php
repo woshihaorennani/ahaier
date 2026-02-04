@@ -93,6 +93,27 @@ class WeChatOaService
         return $response;
     }
 
+    /**
+     * @notes 公众号-静默授权根据code获取openid
+     * @param string $code
+     * @return array
+     * @throws Exception
+     * @throws \EasyWeChat\Kernel\Exceptions\InvalidArgumentException
+     */
+    public function getOpenidByCode(string $code)
+    {
+        $response = $this->app->getOAuth()
+            ->scopes(['snsapi_base'])
+            ->userFromCode($code)
+            ->getRaw();
+
+        if (!isset($response['openid']) || empty($response['openid'])) {
+            throw new Exception('获取openID失败');
+        }
+
+        return $response;
+    }
+
 
     /**
      * @notes 公众号跳转url
@@ -106,6 +127,18 @@ class WeChatOaService
     {
         return $this->app->getOAuth()
             ->scopes(['snsapi_userinfo'])
+            ->redirect($url);
+    }
+
+    /**
+     * @notes 公众号静默授权跳转url
+     * @param string $url
+     * @return string
+     */
+    public function getSilentCodeUrl(string $url)
+    {
+        return $this->app->getOAuth()
+            ->scopes(['snsapi_base'])
             ->redirect($url);
     }
 

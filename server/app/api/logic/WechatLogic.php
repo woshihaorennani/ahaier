@@ -62,4 +62,51 @@ class WechatLogic extends BaseLogic
             return false;
         }
     }
+
+    /**
+     * @notes 订阅号静默授权，获取openid并回填用户数据
+     * @param string $code
+     * @return false|array
+     */
+    public static function silentAuth(string $code)
+    {
+        try {
+            $res = (new WeChatOaService())->getOpenidByCode($code);
+            $openid = $res['openid'];
+            $unionid = $res['unionid'] ?? '';
+            $user = \app\common\model\marketing\WeixinUser::where('openid', $openid)->find();
+            if (empty($user)) {
+                \app\common\model\marketing\WeixinUser::create([
+                    'openid' => $openid,
+                    'unionid' => $unionid,
+                    'nickname' => '',
+                    'avatar' => '',
+                    'sex' => 0,
+                    'country' => '',
+                    'province' => '',
+                    'city' => '',
+                    'subscribe_scene' => '',
+                    'subscribe_time' => 0,
+                    'status' => 1,
+                    'create_time' => time(),
+                    'update_time' => time(),
+                ]);
+                $user = \app\common\model\marketing\WeixinUser::where('openid', $openid)->find();
+            }
+            return $user?->toArray() ?? [];
+        } catch (Exception $e) {
+            self::setError('静默授权失败:' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * @notes 获取静默授权跳转url
+     * @param string $url
+     * @return string
+     */
+    public static function silentCodeUrl(string $url)
+    {
+        return (new WeChatOaService())->getSilentCodeUrl($url);
+    }
 }
