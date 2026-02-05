@@ -46,10 +46,6 @@
         <div class="modal-overlay"></div>
         <div class="modal-content">
             <img src="./images/mark2.png" class="modal-bg" alt="Miss Background">
-            <div class="miss-info">
-                <div class="miss-title">-马跃新程<br>绿能送福-</div>
-                <div class="miss-desc">解锁建站权益</div>
-            </div>
             <img src="./images/yuyue.png" class="miss-btn-img" alt="马上预约" onclick="closeModal('missModal')">
         </div>
     </div>
@@ -128,11 +124,79 @@
             openid = localStorage.getItem('u_openid');
         }
 
+        // Local development check
+        if (!openid && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+             openid = 'local_test_openid';
+             localStorage.setItem('u_openid', openid);
+             syncUser(openid);
+             console.log('Local environment detected, using default OpenID:', openid);
+        }
+
         if (!openid) {
             redirectToAuth();
         } else {
             console.log('OpenID retrieved:', openid);
         }
+
+        // Close modal function
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Draw Lottery function
+        function drawLottery(openid) {
+            return fetch('/api/lottery/draw', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ openid: openid })
+            })
+            .then(res => res.json());
+        }
+
+        // Lottery Draw Handler
+        document.querySelector('.open-btn').addEventListener('click', function() {
+            if (!openid) {
+                // If openid is missing, try to redirect or alert
+                redirectToAuth();
+                return;
+            }
+            
+            const btn = document.querySelector('.open-btn');
+            
+            // Add loading/drawing effect
+            btn.classList.add('drawing');
+            
+            const minTimePromise = new Promise(resolve => setTimeout(resolve, 1500));
+            
+            const drawPromise = drawLottery(openid).catch(error => {
+                console.error('Error during draw:', error);
+                return { code: 0, msg: 'Network Error' };
+            });
+
+            Promise.all([drawPromise, minTimePromise]).then(([res]) => {
+                // Remove loading effect
+                btn.classList.remove('drawing');
+
+                if (res.code === 1) {
+                    const data = res.data;
+                    if (data.is_win === 1) {
+                        // Update prize amount
+                        document.getElementById('prizeValue').innerText = data.amount;
+                        // Show prize modal
+                        document.getElementById('prizeModal').style.display = 'block';
+                    } else {
+                        // Show miss modal
+                        document.getElementById('missModal').style.display = 'block';
+                    }
+                } else {
+                    console.error('Draw failed:', res.msg);
+                    // Show miss modal even on error
+                    document.getElementById('missModal').style.display = 'block';
+                }
+            });
+        });
     </script>
 </body>
 </html>
