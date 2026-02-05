@@ -25,7 +25,7 @@ use app\api\validate\WechatValidate;
  */
 class WechatController extends BaseApiController
 {
-    public array $notNeedLogin = ['jsConfig', 'silentAuth', 'silentCodeUrl'];
+    public array $notNeedLogin = ['jsConfig', 'silentAuth', 'silentCodeUrl', 'getAuthDomain'];
 
 
     /**
@@ -69,5 +69,19 @@ class WechatController extends BaseApiController
         $url = $params['url'];
         $result = ['url' => WechatLogic::silentCodeUrl($url)];
         return $this->success('获取成功', $result);
+    }
+
+    /**
+     * @notes 获取授权域名
+     * @return \think\response\Json
+     */
+    public function getAuthDomain()
+    {
+        $uid = $this->request->get('uid', '10815991');
+        $result = WechatLogic::getAuthDomain($uid);
+        if ($result === false) {
+            return $this->fail(WechatLogic::getError());
+        }
+        return $this->data($result);
     }
 }

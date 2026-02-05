@@ -109,4 +109,21 @@ class WechatLogic extends BaseLogic
     {
         return (new WeChatOaService())->getSilentCodeUrl($url);
     }
+
+    /**
+     * @notes 获取授权域名
+     * @param string $uid
+     * @return mixed
+     */
+    public static function getAuthDomain(string $uid)
+    {
+        try {
+            $url = "https://www.yaoyaola.net/exapi/get_authdomain/" . $uid;
+            $result = file_get_contents($url);
+            return json_decode($result, true);
+        } catch (\Exception $e) {
+            self::setError('获取授权域名失败:' . $e->getMessage());
+            return false;
+        }
+    }
 }

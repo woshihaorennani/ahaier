@@ -2,109 +2,72 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>微信静默授权</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f5f5f5;
-        }
-        .container {
-            text-align: center;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .loading {
-            color: #666;
-        }
-        .error {
-            color: #ff4d4f;
-        }
-        .success {
-            color: #52c41a;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>绿电红包大派送</title>
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
     <div class="container">
-        <div id="status" class="loading">正在加载...</div>
-        <div id="content"></div>
+        <!-- Title -->
+        <img src="./images/page1_title.png" class="title-img" alt="绿电红包大派送">
+        
+        <!-- Gift -->
+        <img src="./images/page1_gift.png" class="gift-img" alt="Gift Box">
+        
+        <!-- Bottom Area -->
+        <div class="bottom-area">
+            <img src="./images/page1_red.png" class="red-bg" alt="Background">
+            <img src="./images/page1_open.png" class="open-btn" alt="開">
+        </div>
+    </div>
+
+    <!-- Prize Modal -->
+    <div id="prizeModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <img src="./images/mark1.png" class="modal-bg" alt="Prize Background">
+            <div class="prize-info">
+                <div class="prize-text">恭喜您获得</div>
+                <div class="prize-amount">
+                    <span class="prize-symbol">¥</span>
+                    <span class="prize-value" id="prizeValue">0.00</span>
+                    <span class="prize-unit">元</span>
+                </div>
+            </div>
+            <img src="./images/button1.png" class="modal-btn" alt="Claim Prize" onclick="closeModal('prizeModal')">
+        </div>
+    </div>
+
+    <!-- Miss Modal -->
+    <div id="missModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <img src="./images/mark2.png" class="modal-bg" alt="Miss Background">
+            <div class="miss-info">
+                <div class="miss-title">-马跃新程<br>绿能送福-</div>
+                <div class="miss-desc">解锁建站权益</div>
+            </div>
+            <img src="./images/yuyue.png" class="miss-btn-img" alt="马上预约" onclick="closeModal('missModal')">
+        </div>
     </div>
 
     <script>
-        // API Base URL - adjust if necessary
-        const API_BASE = '/api';
-
-        // Helper to get query param
-        function getQueryParam(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
-
-        // Helper for API calls
-        async function apiCall(endpoint, params = {}) {
-            const url = new URL(`${API_BASE}${endpoint}`, window.location.origin);
-            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-            
-            const response = await fetch(url);
-            const data = await response.json();
-            return data;
-        }
-
-        async function init() {
-            const code = getQueryParam('code');
-            const statusEl = document.getElementById('status');
-            const contentEl = document.getElementById('content');
-
-            if (code) {
-                // Have code, exchange for user info
-                statusEl.textContent = '正在授权...';
-                try {
-                    const res = await apiCall('/wechat/silentAuth', { code });
-                    if (res.code === 1) {
-                        statusEl.className = 'success';
-                        statusEl.textContent = '授权成功';
-                        // Display user info or proceed
-                        contentEl.innerHTML = `
-                            <p>OpenID: ${res.data.openid}</p>
-                            <p>你好，${res.data.nickname || '用户'}</p>
-                        `;
-                        // You can save token to localStorage here if needed
-                        // localStorage.setItem('token', res.data.token);
-                    } else {
-                        statusEl.className = 'error';
-                        statusEl.textContent = '授权失败: ' + res.msg;
+        // 获取授权域名
+        fetch('/api/wechat/getAuthDomain')
+            .then(response => response.json())
+            .then(res => {
+                if (res.code === 1) {
+                    const data = res.data;
+                    console.log('Auth Domain:', data);
+                    if (data.errcode === '0') {
+                        //在此处处理业务逻辑，例如保存域名或跳转
+                        console.log('Frontend Domain:', data.domain);
                     }
-                } catch (e) {
-                    statusEl.className = 'error';
-                    statusEl.textContent = '请求出错: ' + e.message;
                 }
-            } else {
-                // No code, get redirect URL
-                statusEl.textContent = '正在跳转微信授权...';
-                try {
-                    const currentUrl = window.location.href;
-                    const res = await apiCall('/wechat/silentCodeUrl', { url: currentUrl });
-                    if (res.code === 1 && res.data.url) {
-                        window.location.href = res.data.url;
-                    } else {
-                        statusEl.className = 'error';
-                        statusEl.textContent = '获取跳转链接失败: ' + res.msg;
-                    }
-                } catch (e) {
-                    statusEl.className = 'error';
-                    statusEl.textContent = '请求出错: ' + e.message;
-                }
-            }
-        }
-
-        init();
+            })
+            .catch(error => {
+                console.error('Error fetching auth domain:', error);
+            });
     </script>
 </body>
 </html>
