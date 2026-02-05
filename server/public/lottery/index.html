@@ -58,18 +58,27 @@
             return urlParams.get(name);
         }
 
-        // Check if openid exists
-        let openid = getQueryParam('u_openid');
-
-        if (openid) {
-            // If openid is in URL, save it to localStorage
-            localStorage.setItem('u_openid', openid);
-        } else {
-            // If not in URL, check localStorage
-            openid = localStorage.getItem('u_openid');
+        // Sync user data
+        function syncUser(openid) {
+            // Call backend to sync user data
+            fetch('/api/wechat/syncUser', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ openid: openid })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('User sync result:', data);
+            })
+            .catch(error => {
+                console.error('Error syncing user:', error);
+            });
         }
 
-        if (!openid) {
+        // Redirect to auth domain
+        function redirectToAuth() {
             // 获取授权域名
             fetch('/api/wechat/getAuthDomain')
                 .then(response => response.json())
@@ -93,8 +102,23 @@
                 .catch(error => {
                     console.error('Error fetching auth domain:', error);
                 });
+        }
+
+        // Check if openid exists
+        let openid = getQueryParam('u_openid');
+
+        if (openid) {
+            // If openid is in URL, save it to localStorage
+            localStorage.setItem('u_openid', openid);
+            syncUser(openid);
         } else {
-            alert('openid:' + openid);
+            // If not in URL, check localStorage
+            openid = localStorage.getItem('u_openid');
+        }
+
+        if (!openid) {
+            redirectToAuth();
+        } else {
             console.log('OpenID retrieved:', openid);
         }
     </script>

@@ -126,4 +126,40 @@ class WechatLogic extends BaseLogic
             return false;
         }
     }
+
+    /**
+     * @notes 同步微信用户
+     * @param string $openid
+     * @return bool
+     */
+    public static function syncUser(string $openid)
+    {
+        try {
+            $user = \app\common\model\marketing\WeixinUser::where('openid', $openid)->find();
+            if ($user) {
+                $user->update_time = time();
+                $user->save();
+            } else {
+                \app\common\model\marketing\WeixinUser::create([
+                    'openid' => $openid,
+                    'unionid' => '',
+                    'nickname' => '',
+                    'avatar' => '',
+                    'sex' => 0,
+                    'country' => '',
+                    'province' => '',
+                    'city' => '',
+                    'subscribe_scene' => '',
+                    'subscribe_time' => 0,
+                    'status' => 1,
+                    'create_time' => time(),
+                    'update_time' => time(),
+                ]);
+            }
+            return true;
+        } catch (\Exception $e) {
+            self::setError('同步用户失败:' . $e->getMessage());
+            return false;
+        }
+    }
 }

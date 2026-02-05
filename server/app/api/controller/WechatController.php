@@ -25,7 +25,7 @@ use app\api\validate\WechatValidate;
  */
 class WechatController extends BaseApiController
 {
-    public array $notNeedLogin = ['jsConfig', 'silentAuth', 'silentCodeUrl', 'getAuthDomain'];
+    public array $notNeedLogin = ['jsConfig', 'silentAuth', 'silentCodeUrl', 'getAuthDomain', 'syncUser'];
 
 
     /**
@@ -83,5 +83,22 @@ class WechatController extends BaseApiController
             return $this->fail(WechatLogic::getError());
         }
         return $this->data($result);
+    }
+
+    /**
+     * @notes 同步用户
+     * @return \think\response\Json
+     */
+    public function syncUser()
+    {
+        $openid = $this->request->post('openid');
+        if (empty($openid)) {
+            return $this->fail('openid不能为空');
+        }
+        $result = WechatLogic::syncUser($openid);
+        if ($result === false) {
+            return $this->fail(WechatLogic::getError());
+        }
+        return $this->success('同步成功');
     }
 }
