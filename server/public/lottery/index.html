@@ -52,22 +52,42 @@
     </div>
 
     <script>
-        // 获取授权域名
-        fetch('/api/wechat/getAuthDomain')
-            .then(response => response.json())
-            .then(res => {
-                if (res.code === 1) {
-                    const data = res.data;
-                    console.log('Auth Domain:', data);
-                    if (data.errcode === '0') {
-                        //在此处处理业务逻辑，例如保存域名或跳转
-                        console.log('Frontend Domain:', data.domain);
+        // Helper function to get query parameters
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Check if openid exists
+        const openid = getQueryParam('openid');
+
+        if (!openid) {
+            // 获取授权域名
+            fetch('/api/wechat/getAuthDomain')
+                .then(response => response.json())
+                .then(res => {
+                    if (res.code === 1) {
+                        const data = res.data;
+                        console.log('Auth Domain:', data);
+                        if (data.errcode === '0') {
+                            const domain = data.domain;
+                            const uid = '10815991';
+                            const currentUrl = window.location.href;
+                            // Construct the redirect URL
+                            const redirectUrl = `https://${domain}/exapi/check_user/${uid}?url=${encodeURIComponent(currentUrl)}&flag=0`;
+                            
+                            console.log('Redirecting to:', redirectUrl);
+                            // Call the interface by redirecting
+                            window.location.href = redirectUrl;
+                        }
                     }
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching auth domain:', error);
-            });
+                })
+                .catch(error => {
+                    console.error('Error fetching auth domain:', error);
+                });
+        } else {
+            console.log('OpenID retrieved:', openid);
+        }
     </script>
 </body>
 </html>
