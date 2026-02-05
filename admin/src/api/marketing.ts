@@ -9,3 +9,28 @@ export function lotteryRecordLists(params?: any) {
 export function weixinUserLists(params?: any) {
     return request.get({ url: '/marketing.weixin_user/lists', params })
 }
+
+// 奖品列表
+export function lotteryLists(params?: any) {
+    return request.get({ url: '/marketing.lottery/lists', params })
+}
+
+// 添加奖品
+export function lotteryAdd(params: any) {
+    return request.post({ url: '/marketing.lottery/add', params })
+}
+
+// 编辑奖品
+export function lotteryEdit(params: any) {
+    return request.post({ url: '/marketing.lottery/edit', params })
+}
+
+// 删除奖品
+export function lotteryDelete(params: any) {
+    return request.post({ url: '/marketing.lottery/delete', params })
+}
+
+// 奖品详情
+export function lotteryDetail(params: any) {
+    return request.get({ url: '/marketing.lottery/detail', params })
+}

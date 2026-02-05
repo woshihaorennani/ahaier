@@ -5,9 +5,10 @@ namespace app\adminapi\lists\marketing;
 use app\adminapi\lists\BaseAdminDataLists;
 use app\common\lists\ListsSearchInterface;
 use app\common\lists\ListsSortInterface;
+use app\common\lists\ListsExcelInterface;
 use app\common\model\marketing\WeixinUser;
 
-class WeixinUserLists extends BaseAdminDataLists implements ListsSearchInterface, ListsSortInterface
+class WeixinUserLists extends BaseAdminDataLists implements ListsSearchInterface, ListsSortInterface, ListsExcelInterface
 {
     public function setSearch(): array
     {
@@ -38,5 +39,28 @@ class WeixinUserLists extends BaseAdminDataLists implements ListsSearchInterface
     public function count(): int
     {
         return WeixinUser::where($this->searchWhere)->count();
+    }
+
+    public function setExcelFields(): array
+    {
+        return [
+            'id' => 'ID',
+            'avatar' => '头像',
+            'nickname' => '昵称',
+            'openid' => 'OpenID',
+            'sex' => '性别',
+            'country' => '国家',
+            'province' => '省份',
+            'city' => '城市',
+            'subscribe_scene' => '订阅来源',
+            'subscribe_time' => '订阅时间',
+            'update_time' => '更新时间',
+            'create_time' => '创建时间',
+        ];
+    }
+
+    public function setFileName(): string
+    {
+        return '微信用户列表';
     }
 }

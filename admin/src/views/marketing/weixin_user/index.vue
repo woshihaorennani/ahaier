@@ -32,6 +32,7 @@
                 <el-form-item>
                     <el-button type="primary" @click="resetPage">查询</el-button>
                     <el-button @click="resetParams">重置</el-button>
+                    <el-button type="success" @click="handleExport">全部导出</el-button>
                 </el-form-item>
             </el-form>
         </el-card>
@@ -46,22 +47,8 @@
                 </el-table-column>
                 <el-table-column label="昵称" prop="nickname" min-width="150" show-tooltip-when-overflow />
                 <el-table-column label="OpenID" prop="openid" min-width="220" show-tooltip-when-overflow />
-                <el-table-column label="UnionID" prop="unionid" min-width="220" show-tooltip-when-overflow />
-                <el-table-column label="性别" min-width="80">
-                    <template #default="{ row }">
-                        <span v-if="row.sex === 1">男</span>
-                        <span v-else-if="row.sex === 2">女</span>
-                        <span v-else>未知</span>
-                    </template>
-                </el-table-column>
-                <el-table-column label="地区" min-width="180">
-                    <template #default="{ row }">
-                        <span>{{ [row.country, row.province, row.city].filter(Boolean).join(' / ') }}</span>
-                    </template>
-                </el-table-column>
-                <el-table-column label="订阅来源" prop="subscribe_scene" min-width="120" show-tooltip-when-overflow />
-                <el-table-column label="订阅时间" prop="subscribe_time" min-width="160" />
                 <el-table-column label="创建时间" prop="create_time" min-width="160" />
+                <el-table-column label="更新时间" prop="update_time" min-width="160" />
             </el-table>
 
             <div class="flex justify-end mt-4">
@@ -86,6 +73,14 @@ const { pager, getLists, resetPage, resetParams } = usePaging({
     fetchFun: weixinUserLists,
     params: queryParams
 })
+
+const handleExport = async () => {
+    await weixinUserLists({
+        ...queryParams,
+        export: 2,
+        page_type: 0
+    })
+}
 
 getLists()
 </script>
