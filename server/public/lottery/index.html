@@ -20,7 +20,7 @@
         <!-- Bottom Area -->
         <div class="bottom-area">
             <img src="./images/page1_red.png" class="red-bg" alt="Background">
-            <img src="./images/page1_open.png" class="open-btn" alt="開">
+            <img src="./images/page1_open.png" class="open-btn" alt="開" onclick="void(0)">
         </div>
     </div>
 
@@ -157,7 +157,6 @@
 
         // Lottery Draw Handler
         document.querySelector('.open-btn').addEventListener('click', function() {
-            alert(1111)
             if (!openid) {
                 // If openid is missing, try to redirect or alert
                 redirectToAuth();
