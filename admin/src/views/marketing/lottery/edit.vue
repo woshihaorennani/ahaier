@@ -39,6 +39,9 @@
             <el-form-item label="发放数量" prop="number_all">
                 <el-input-number v-model="formData.number_all" :min="0" :precision="0" />
             </el-form-item>
+            <el-form-item label="可中奖次数" prop="can_win">
+                <el-input-number v-model="formData.can_win" :min="0" :precision="0" />
+            </el-form-item>
         </el-form>
         <template #footer>
             <div class="dialog-footer">
@@ -71,6 +74,7 @@ const formData = reactive({
     max: 0,
     bonuses_pool: 0,
     number_all: 0,
+    can_win: 1,
     special: 0
 })
 
@@ -80,7 +84,8 @@ const rules = reactive<FormRules>({
     min: [{ required: true, message: '请输入最小区间', trigger: 'blur' }],
     max: [{ required: true, message: '请输入最大区间', trigger: 'blur' }],
     bonuses_pool: [{ required: true, message: '请输入奖金池', trigger: 'blur' }],
-    number_all: [{ required: true, message: '请输入发放数量', trigger: 'blur' }]
+    number_all: [{ required: true, message: '请输入发放数量', trigger: 'blur' }],
+    can_win: [{ required: true, message: '请输入可中奖次数', trigger: 'blur' }]
 })
 
 const open = async (type: string, id?: number) => {

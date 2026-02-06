@@ -2,11 +2,10 @@
 namespace app\api\controller;
 
 use app\api\logic\LotteryLogic;
-use app\common\controller\BaseLikeAdminController;
 
-class LotteryController extends BaseLikeAdminController
+class LotteryController extends BaseApiController
 {
-    public array $notNeedLogin = ['draw'];
+    public array $notNeedLogin = ['draw', 'submitContact', 'initTable'];
 
     /**
      * @notes 抽奖
@@ -29,5 +28,48 @@ class LotteryController extends BaseLikeAdminController
             return $this->fail($msg); 
         }
         return $this->data($result);
+    }
+
+    /**
+     * @notes 提交联系信息
+     */
+    public function submitContact()
+    {
+        $params = $this->request->post();
+        // Simple validation
+        if (empty($params['name']) || empty($params['phone'])) {
+             return $this->fail('请完善信息');
+        }
+
+        $result = LotteryLogic::submitContact($params);
+        if ($result === false) {
+             return $this->fail(LotteryLogic::getError() ?: '提交失败');
+        }
+        return $this->success('提交成功');
+    }
+
+    public function initTable()
+    {
+        try {
+            $prefix = config('database.connections.mysql.prefix');
+            $sql = "CREATE TABLE IF NOT EXISTS `{$prefix}lottery_contact` (
+              `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+              `openid` varchar(64) DEFAULT NULL COMMENT 'OpenID',
+              `name` varchar(50) NOT NULL DEFAULT '' COMMENT '姓名',
+              `phone` varchar(20) NOT NULL DEFAULT '' COMMENT '电话',
+              `business` varchar(50) NOT NULL DEFAULT '' COMMENT '业务',
+              `region` varchar(100) NOT NULL DEFAULT '' COMMENT '区域',
+              `request` text COMMENT '需求',
+              `create_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+              `update_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+              `delete_time` int(10) unsigned DEFAULT NULL COMMENT '删除时间',
+              PRIMARY KEY (`id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='抽奖联系人表';";
+            
+            \think\facade\Db::execute($sql);
+            return $this->success('Table created');
+        } catch (\Exception $e) {
+            return $this->fail($e->getMessage());
+        }
     }
 }

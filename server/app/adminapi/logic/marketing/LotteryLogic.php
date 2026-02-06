@@ -28,6 +28,7 @@ class LotteryLogic extends BaseLogic
                 'max' => $params['max'] ?? 0,
                 'bonuses_pool' => $params['bonuses_pool'] ?? 0,
                 'number_all' => $params['number_all'] ?? 0,
+                'can_win' => $params['can_win'] ?? 1,
                 'special' => $params['special'] ?? 0,
                 'create_time' => time(),
                 'update_time' => time(),
@@ -55,6 +56,7 @@ class LotteryLogic extends BaseLogic
                 'max' => $params['max'] ?? 0,
                 'bonuses_pool' => $params['bonuses_pool'] ?? 0,
                 'number_all' => $params['number_all'] ?? 0,
+                'can_win' => $params['can_win'] ?? 1,
                 'special' => $params['special'] ?? 0,
                 'update_time' => time(),
             ]);

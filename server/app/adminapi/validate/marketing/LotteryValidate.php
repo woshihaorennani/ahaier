@@ -19,6 +19,7 @@ class LotteryValidate extends BaseValidate
         'max' => 'require|float|min:0',
         'bonuses_pool' => 'require|float|min:0',
         'number_all' => 'require|integer|min:0',
+        'can_win' => 'require|integer|min:0',
         'special' => 'integer|min:0',
     ];
 
@@ -36,11 +37,13 @@ class LotteryValidate extends BaseValidate
         'bonuses_pool.float' => '奖金池必须为数字',
         'number_all.require' => '发放数量不能为空',
         'number_all.integer' => '发放数量必须为整数',
+        'can_win.require' => '可中奖次数不能为空',
+        'can_win.integer' => '可中奖次数必须为整数',
     ];
 
     protected $scene = [
-        'add' => ['name', 'dates', 'min', 'max', 'bonuses_pool', 'number_all', 'special'],
-        'edit' => ['id', 'name', 'dates', 'min', 'max', 'bonuses_pool', 'number_all', 'special'],
+        'add' => ['name', 'dates', 'min', 'max', 'bonuses_pool', 'number_all', 'can_win', 'special'],
+        'edit' => ['id', 'name', 'dates', 'min', 'max', 'bonuses_pool', 'number_all', 'can_win', 'special'],
         'delete' => ['id'],
         'detail' => ['id'],
     ];

@@ -26,45 +26,86 @@ class LotteryLogic extends BaseLogic
 
             // 2. 查询今日可用奖品
             $today = date('Y-m-d');
-            $prizes = Lottery::where('available_date', $today)
-                ->whereRaw('total_quantity > distributed_quantity')
-                ->select();
+            // 查询当天有库存的奖品
+            $prize = Lottery::where('dates', $today)
+                ->whereRaw('number_all > number_user')
+                ->limit(1)
+                ->find();
 
-            if ($prizes->isEmpty()) {
-                // 没有奖品，返回未中奖状态
+            if (!$prize) {
                 return [
                     'is_win' => 0,
-                    'message' => '今日奖品已派完或无活动'
+                    'message' => '今日奖品已派完'
                 ];
             }
 
-            // 3. 随机选取一个奖品 (这里简单取第一个，或者随机)
-            // 假设同一天可能有多个配置，随机取一个
-            $prize = $prizes->random();
+            // 3. 校验奖品条件（用户限额、奖金池）
+            
+            // 3.1 用户是否还有中奖次数 (对比 can_win 字段)
+            if (isset($prize->can_win) && $prize->can_win > 0) {
+                $userWinCount = LotteryRecord::where('openid', $user->openid)
+                    ->where('lottery_id', $prize->id)
+                    ->where('is_win', 1)
+                    ->count();
+                if ($userWinCount >= $prize->can_win) {
+                    return [
+                        'is_win' => 0,
+                        'message' => '您已达到今日中奖上限'
+                    ];
+                }
+            }
 
-            // 4. 计算中奖金额
-            // prize_range 格式如 "0.1 - 0.3" 或 "¥0.1 - ¥0.3"
-            $rangeStr = str_replace(['¥', '￥', ' '], '', $prize->prize_range);
-            $range = explode('-', $rangeStr);
-            $min = isset($range[0]) ? floatval($range[0]) : 0;
-            $max = isset($range[1]) ? floatval($range[1]) : 0;
+            // 3.2 检查总奖金池 (bonuses_pool)
+            if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
+                $usedAmount = LotteryRecord::where('lottery_id', $prize->id)
+                    ->where('is_win', 1)
+                    ->sum('amount');
+                if ($usedAmount >= $prize->bonuses_pool) {
+                     return [
+                        'is_win' => 0,
+                        'message' => '奖池已空'
+                    ];
+                }
+                // 将已用金额暂存到对象中，供后续计算使用
+                $prize->used_amount = $usedAmount;
+            }
+
+            // 5. 计算中奖金额
+            $min = floatval($prize->min);
+            $max = floatval($prize->max);
             
             // 生成随机金额，保留2位小数
             $randomAmount = $min + mt_rand() / mt_getrandmax() * ($max - $min);
+            
+            // 检查奖金池剩余金额，如果随机金额超过剩余金额，则取剩余金额
+            if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
+                $remaining = $prize->bonuses_pool - ($prize->used_amount ?? 0);
+                if ($randomAmount > $remaining) {
+                    $randomAmount = $remaining;
+                }
+            }
+            
             $amountStr = number_format($randomAmount, 2, '.', '');
+            
+            // 如果金额太小（例如0），则视为未中奖或异常
+            if ($randomAmount <= 0) {
+                 return [
+                    'is_win' => 0,
+                    'message' => '奖池已空'
+                ];
+            }
 
-            // 5. 开启事务记录
+            // 6. 开启事务记录
             Db::startTrans();
             try {
                 // 增加已发放数量
-                // 使用乐观锁或直接更新，这里直接更新
+                // 使用乐观锁更新
                 $res = Lottery::where('id', $prize->id)
-                    ->where('distributed_quantity', '<', Db::raw('total_quantity'))
-                    ->inc('distributed_quantity')
+                    ->where('number_user', '<', Db::raw('number_all'))
+                    ->inc('number_user')
                     ->update();
 
                 if (!$res) {
-                    // 并发情况下可能刚发完
                     Db::rollback();
                     return [
                         'is_win' => 0,
@@ -74,11 +115,11 @@ class LotteryLogic extends BaseLogic
 
                 // 记录抽奖记录
                 LotteryRecord::create([
-                    'openid' => $user->id, // 存 ID
+                    'openid' => $user->openid, // 存 用户openid
                     'lottery_id' => $prize->id,
                     'is_win' => 1,
-                    'amount' => $amountStr, // 存金额
-                    'prize_name' => $prize->prize_name,
+                    'amount' => $amountStr,
+                    'prize_name' => $prize->name,
                     'create_time' => time(),
                     'update_time' => time()
                 ]);
@@ -87,7 +128,7 @@ class LotteryLogic extends BaseLogic
 
                 return [
                     'is_win' => 1,
-                    'prize_name' => $prize->prize_name,
+                    'prize_name' => $prize->name,
                     'amount' => $amountStr
                 ];
 
@@ -98,6 +139,31 @@ class LotteryLogic extends BaseLogic
 
         } catch (\Exception $e) {
             self::setError('抽奖失败:' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * @notes 提交联系人信息
+     * @param $params
+     * @return bool
+     */
+    public static function submitContact($params)
+    {
+        try {
+            \app\common\model\marketing\LotteryContact::create([
+                'openid' => $params['openid'] ?? '',
+                'name' => $params['name'],
+                'phone' => $params['phone'],
+                'business' => $params['business'],
+                'region' => $params['region'],
+                'request' => $params['request'] ?? '',
+                'create_time' => time(),
+                'update_time' => time()
+            ]);
+            return true;
+        } catch (\Exception $e) {
+            self::setError($e->getMessage());
             return false;
         }
     }

@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>绿电红包大派送</title>
+    <script src="https://qncdn.shwdsg.com/js/jquery.min.js"></script>
+    <script src="https://qncdn.shwdsg.com/js/city_list.js"></script>
+    <script src="https://qncdn.shwdsg.com/js/mobileSelect.js"></script>
+    <link rel="stylesheet" href="https://qncdn.shwdsg.com/css/mobileSelect.css">
     <link rel="stylesheet" href="./style.css?version=1.0.0">
 </head>
 <body>
@@ -27,7 +31,7 @@
     <!-- Prize Modal -->
     <div id="prizeModal" class="modal">
         <div class="modal-overlay"></div>
-        <div class="modal-content">
+        <div class="modal-content-1">
             <img src="./images/mark1.png" class="modal-bg" alt="Prize Background">
             <div class="prize-info">
                 <div class="prize-text">恭喜您获得</div>
@@ -46,11 +50,55 @@
         <div class="modal-overlay"></div>
         <div class="modal-content">
             <img src="./images/mark2.png" class="modal-bg" alt="Miss Background">
-            <img src="./images/yuyue.png" class="miss-btn-img" alt="马上预约" onclick="closeModal('missModal')">
+            <img src="./images/yuyue.png" class="miss-btn-img" alt="马上预约" onclick="openContactModal()">
+        </div>
+    </div>
+
+    <!-- 联系信息留存页 -->
+    <div id="contactModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content-3">
+            <img src="./images/mark3.png" class="modal-bg" alt="Contact Background">
+            <div class="form-group-container">
+                <input type="text" id="contact_name" placeholder="输入真实姓名">
+                <input type="tel" id="contact_phone" placeholder="输入联系电话" maxlength="11">
+                <select id="contact_business">
+                    <option value="" disabled selected style="display:none;">选择业务类型</option>
+                    <option value="分布式光伏解决方案">分布式光伏解决方案</option>
+                    <option value="能源储能系统">能源储能系统</option>
+                    <option value="光伏逆变器">光伏逆变器</option>
+                </select>
+                <div id="select_area" class="area-select">所在区域</div>
+                <textarea id="contact_request" rows="3" placeholder="请填写您的需求"></textarea>
+            </div>
+            <img src="./images/submit.png" class="miss-btn-img-3" alt="马上提交" onclick="submitContact()">
         </div>
     </div>
 
     <script>
+        // const API_DOMAIN = 'https://haier.shwdsg.com';
+        const API_DOMAIN = 'http://localhost';
+        var mobileSelect4 = {}
+        let widthData = ["33%","33%","34%"]
+
+        // 实例省市区选择
+        mobileSelect4 = new MobileSelect({
+            triggerDisplayData: false,
+            trigger: '#select_area',
+            title: '所在地区',
+            wheels: [{
+                    data: pospital_datas
+                }
+            ],
+            transitionEnd: function (indexArr, data) {
+                console.log(data);
+            },
+            callback: function (indexArr, data) {
+                let new_name = data[0].value + " " + data[1].value + " " + data[2].value
+                $("#select_area").html(new_name)
+            }
+        });
+
         // Helper function to get query parameters
         function getQueryParam(name) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -69,7 +117,7 @@
         // Sync user data
         function syncUser(openid) {
             // Call backend to sync user data
-            fetch('/api/wechat/syncUser', {
+            fetch(`${API_DOMAIN}/api/wechat/syncUser`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -88,7 +136,7 @@
         // Redirect to auth domain
         function redirectToAuth() {
             // 获取授权域名
-            fetch('/api/wechat/getAuthDomain')
+            fetch(`${API_DOMAIN}/api/wechat/getAuthDomain`)
                 .then(response => response.json())
                 .then(res => {
                     if (res.code === 1) {
@@ -145,7 +193,7 @@
 
         // Draw Lottery function
         function drawLottery(openid) {
-            return fetch('/api/lottery/draw', {
+            return fetch(`${API_DOMAIN}/api/lottery/draw`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -168,7 +216,8 @@
             // Add loading/drawing effect
             btn.classList.add('drawing');
             
-            const minTimePromise = new Promise(resolve => setTimeout(resolve, 1500));
+            // Minimum animation time of 1 second
+            const minTimePromise = new Promise(resolve => setTimeout(resolve, 1000));
             
             const drawPromise = drawLottery(openid).catch(error => {
                 console.error('Error during draw:', error);
@@ -197,6 +246,62 @@
                 }
             });
         });
+        function openContactModal() {
+            closeModal('missModal');
+            document.getElementById('contactModal').style.display = 'block';
+        }
+
+        // Submit Contact function
+        function submitContact() {
+            const name = document.getElementById('contact_name').value;
+            const phone = document.getElementById('contact_phone').value;
+            const business = document.getElementById('contact_business').value;
+            const region = document.getElementById('select_area').innerText;
+            const request = document.getElementById('contact_request').value;
+
+            if (!name || !phone || !business || region === '请选择所在区域' || !request) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                alert('请输入正确的手机号码');
+                return;
+            }
+
+            fetch(`${API_DOMAIN}/api/lottery/submitContact`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    phone: phone,
+                    business: business,
+                    region: region,
+                    request: request,
+                    openid: openid
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 1) {
+                    alert('提交成功');
+                    closeModal('contactModal');
+                    // Reset form
+                    document.getElementById('contact_name').value = '';
+                    document.getElementById('contact_phone').value = '';
+                    document.getElementById('contact_request').value = '';
+                    document.getElementById('select_area').innerText = '请选择所在区域';
+                } else {
+                    alert(data.msg || '提交失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting contact:', error);
+                alert('网络错误，请稍后重试');
+            });
+        }
     </script>
 </body>
 </html>

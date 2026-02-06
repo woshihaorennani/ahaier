@@ -34,3 +34,8 @@ export function lotteryDelete(params: any) {
 export function lotteryDetail(params: any) {
     return request.get({ url: '/marketing.lottery/detail', params })
 }
+
+// 联系人列表
+export function lotteryContactLists(params?: any) {
+    return request.get({ url: '/marketing.lottery/contactLists', params })
+}

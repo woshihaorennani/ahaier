@@ -4,6 +4,7 @@ namespace app\adminapi\controller\marketing;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\lists\marketing\LotteryLists;
+use app\adminapi\lists\marketing\LotteryContactLists;
 use app\adminapi\logic\marketing\LotteryLogic;
 use app\adminapi\validate\marketing\LotteryValidate;
 
@@ -71,5 +72,14 @@ class LotteryController extends BaseAdminController
         $params = (new LotteryValidate())->goCheck('detail');
         $result = LotteryLogic::detail($params['id']);
         return $this->success('获取成功', $result);
+    }
+
+    /**
+     * @notes 联系人列表
+     * @return \think\response\Json
+     */
+    public function contactLists()
+    {
+        return $this->dataLists(new LotteryContactLists());
     }
 }
