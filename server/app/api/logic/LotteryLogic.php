@@ -230,6 +230,13 @@ class LotteryLogic extends BaseLogic
         // 发送请求
         $url = "https://{$domain}/exapi/SendRedPackToOpenid?" . http_build_query($params);
         
+        $logData = [
+            'openid' => $openid,
+            'money' => $money,
+            'params' => json_encode($params, JSON_UNESCAPED_UNICODE),
+            'create_time' => time()
+        ];
+
         try {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
@@ -244,9 +251,26 @@ class LotteryLogic extends BaseLogic
             }
             curl_close($ch);
             
-            return json_decode($result, true) ?: ['errcode' => -1, 'errmsg' => '接口返回异常'];
+            $logData['result'] = $result;
+            $res = json_decode($result, true);
+
+            if ($res && isset($res['errcode']) && $res['errcode'] == 0) {
+                 $logData['status'] = 1;
+                 $logData['message'] = '发送成功';
+            } else {
+                 $logData['status'] = 0;
+                 $logData['message'] = $res['errmsg'] ?? '接口返回异常或解析失败';
+            }
+            \app\common\model\marketing\LotteryLog::create($logData);
+
+            return $res ?: ['errcode' => -1, 'errmsg' => '接口返回异常'];
             
         } catch (\Exception $e) {
+            $logData['status'] = 0;
+            $logData['message'] = $e->getMessage();
+            $logData['result'] = 'Exception: ' . $e->getMessage();
+            \app\common\model\marketing\LotteryLog::create($logData);
+
             return ['errcode' => -1, 'errmsg' => $e->getMessage()];
         }
     }

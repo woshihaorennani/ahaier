@@ -67,6 +67,20 @@ class LotteryController extends BaseApiController
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='抽奖联系人表';";
             
             \think\facade\Db::execute($sql);
+
+            $sql2 = "CREATE TABLE IF NOT EXISTS `{$prefix}lottery_log` (
+              `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+              `openid` varchar(64) DEFAULT NULL COMMENT 'OpenID',
+              `money` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT '红包金额',
+              `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '状态:1成功,0失败',
+              `message` varchar(255) NOT NULL DEFAULT '' COMMENT '提示信息',
+              `params` text COMMENT '请求参数',
+              `result` text COMMENT '返回结果',
+              `create_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+              PRIMARY KEY (`id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='红包发放日志表';";
+            \think\facade\Db::execute($sql2);
+
             return $this->success('Table created');
         } catch (\Exception $e) {
             return $this->fail($e->getMessage());
