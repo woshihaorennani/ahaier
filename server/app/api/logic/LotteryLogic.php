@@ -196,15 +196,7 @@ class LotteryLogic extends BaseLogic
 
         // 参数处理
         $moneyFen = intval(strval($money * 100)); // 转为分
-        $type = 0; // 默认红包接口
-        if ($moneyFen > 20000) { // 大于200元使用企业付款
-            $type = 1;
-        }
-        
-        // 校验金额
-        if ($moneyFen < 30) {
-            return ['errcode' => -1, 'errmsg' => '红包金额不能低于0.3元'];
-        }
+        $type = 1; // 默认红包接口
 
         $orderid = date('YmdHis') . mt_rand(100000, 999999);
         $reqtick = time();
