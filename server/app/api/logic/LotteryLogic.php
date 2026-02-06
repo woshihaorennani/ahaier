@@ -125,14 +125,14 @@ class LotteryLogic extends BaseLogic
                 ]);
 
                 // 发送红包
-                $sendRes = self::sendRedPacket($user->openid, $randomAmount);
-                if ($sendRes['errcode'] != 0) {
-                    Db::rollback();
-                    return [
-                        'is_win' => 0,
-                        'message' => '奖品发放失败:' . $sendRes['errmsg']
-                    ];
-                }
+                // $sendRes = self::sendRedPacket($user->openid, $randomAmount);
+                // if ($sendRes['errcode'] != 0) {
+                //     Db::rollback();
+                //     return [
+                //         'is_win' => 0,
+                //         'message' => '奖品发放失败:' . $sendRes['errmsg']
+                //     ];
+                // }
 
                 Db::commit();
 
