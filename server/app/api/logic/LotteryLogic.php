@@ -124,6 +124,16 @@ class LotteryLogic extends BaseLogic
                     'update_time' => time()
                 ]);
 
+                // 发送红包
+                $sendRes = self::sendRedPacket($user->openid, $randomAmount);
+                if ($sendRes['errcode'] != 0) {
+                    Db::rollback();
+                    return [
+                        'is_win' => 0,
+                        'message' => '奖品发放失败:' . $sendRes['errmsg']
+                    ];
+                }
+
                 Db::commit();
 
                 return [
@@ -165,6 +175,79 @@ class LotteryLogic extends BaseLogic
         } catch (\Exception $e) {
             self::setError($e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * @notes 发送红包接口
+     * @param string $openid 用户openid
+     * @param float $money 金额（元）
+     * @param string $wishing 祝福语
+     * @param string $title 活动名称
+     * @param string $sendName 发送方名称
+     * @return array
+     */
+    public static function sendRedPacket($openid, $money, $wishing = '心想事成', $title = '恭喜发财', $sendName = '千跃科技')
+    {
+        // 接口配置
+        $domain = 'www.yaoyaola.net';
+        $uid = '10815991';
+        $apikey = 'A7f9K2M8Qe4XbT6RZ0nP3sY'; // 需替换为实际APIKEY
+
+        // 参数处理
+        $moneyFen = intval(strval($money * 100)); // 转为分
+        $type = 0; // 默认红包接口
+        if ($moneyFen > 20000) { // 大于200元使用企业付款
+            $type = 1;
+        }
+        
+        // 校验金额
+        if ($moneyFen < 30) {
+            return ['errcode' => -1, 'errmsg' => '红包金额不能低于0.3元'];
+        }
+
+        $orderid = date('YmdHis') . mt_rand(100000, 999999);
+        $reqtick = time();
+        
+        // 签名 sign = md5(uid+type+orderid+money+reqtick+openid+apikey)
+        $signStr = $uid . $type . $orderid . $moneyFen . $reqtick . $openid . $apikey;
+        $sign = md5($signStr);
+
+        // 请求参数
+        $params = [
+            'uid' => $uid,
+            'type' => $type,
+            'money' => $moneyFen,
+            'orderid' => $orderid,
+            'reqtick' => $reqtick,
+            'openid' => $openid,
+            'sign' => $sign,
+            'title' => $title,
+            'sendname' => $sendName,
+            'wishing' => $wishing
+        ];
+
+        // 发送请求
+        $url = "https://{$domain}/exapi/SendRedPackToOpenid?" . http_build_query($params);
+        
+        try {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            $result = curl_exec($ch);
+            
+            if (curl_errno($ch)) {
+                throw new \Exception(curl_error($ch));
+            }
+            curl_close($ch);
+            
+            return json_decode($result, true) ?: ['errcode' => -1, 'errmsg' => '接口返回异常'];
+            
+        } catch (\Exception $e) {
+            return ['errcode' => -1, 'errmsg' => $e->getMessage()];
         }
     }
 }

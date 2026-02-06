@@ -49,6 +49,16 @@
                 </el-table-column>
                 <el-table-column label="发放数量" prop="number_all" min-width="100" />
                 <el-table-column label="已发数量" prop="number_user" min-width="100" />
+                <el-table-column label="奖金池" min-width="100">
+                    <template #default="{ row }">
+                        ¥{{ row.bonuses_pool }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="已中出金额" min-width="100">
+                    <template #default="{ row }">
+                        ¥{{ row.distributed_amount }}
+                    </template>
+                </el-table-column>
                 <el-table-column label="可中奖次数" prop="can_win" min-width="100" />
                 <el-table-column label="创建时间" prop="create_time" min-width="160" />
                 <el-table-column label="操作" width="120" fixed="right">
