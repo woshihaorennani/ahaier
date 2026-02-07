@@ -45,7 +45,7 @@
         <el-card class="!border-none mt-4" shadow="never">
             <el-table size="large" v-loading="pager.loading" :data="pager.lists">
                 <el-table-column label="ID" prop="id" min-width="80" />
-                <el-table-column label="OpenID" prop="openid" min-width="180" show-tooltip-when-overflow />
+                <!-- <el-table-column label="OpenID" prop="openid" min-width="180" show-tooltip-when-overflow /> -->
                 <el-table-column label="奖品ID" prop="lottery_id" min-width="80" />
                 <el-table-column label="是否中奖" prop="is_win" min-width="100" />
                 <el-table-column label="金额" prop="amount" min-width="100" />
