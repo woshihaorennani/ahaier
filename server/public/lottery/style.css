@@ -27,7 +27,7 @@ body {
     width: 80%;
     margin-top: 12%;
     z-index: 2;
-    animation: bounceInDown 1s both;
+    animation: bounceInDown 2s both;
 }
 
 /* Gift Image */
@@ -39,8 +39,8 @@ body {
     z-index: 1;
     object-fit: contain;
     object-position: top;
-    animation: bounceInDown 1s both;
-    animation-delay: 0.2s;
+    animation: bounceInDown 2s both;
+    animation-delay: 0.5s;
 }
 
 /* Bottom Area */
@@ -54,7 +54,7 @@ body {
     justify-content: center;
     align-items: flex-end;
     animation: fadeInUp 1s both;
-    animation-delay: 0.5s;
+    animation-delay: 2s;
 }
 
 .red-bg {
@@ -218,7 +218,12 @@ body {
 
 #contact_name::placeholder, #contact_phone::placeholder, #contact_request::placeholder {
     color: #42121d;
-    opacity: 1;
+    opacity: 0.5;
+}
+
+/* New class for select and div placeholders */
+.placeholder-text {
+    opacity: 0.5;
 }
 
 #contact_name {
@@ -335,5 +340,41 @@ body {
 
     to {
         transform: scale3d(1, 1, 1);
+    }
+}
+
+/* Background Music Control */
+.music-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    width: 30px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.music-icon {
+    font-size: 16px;
+    color: #fff;
+    line-height: 1;
+}
+
+.music-btn.playing .music-icon {
+    animation: musicRotate 2s linear infinite;
+}
+
+@keyframes musicRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
     }
 }

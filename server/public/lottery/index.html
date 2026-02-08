@@ -62,17 +62,23 @@
             <div class="form-group-container">
                 <input type="text" id="contact_name" placeholder="输入真实姓名">
                 <input type="tel" id="contact_phone" placeholder="输入联系电话" maxlength="11">
-                <select id="contact_business">
+                <select id="contact_business" class="placeholder-text">
                     <option value="" disabled selected style="display:none;">选择业务类型</option>
                     <option value="分布式光伏解决方案">分布式光伏解决方案</option>
                     <option value="能源储能系统">能源储能系统</option>
                     <option value="光伏逆变器">光伏逆变器</option>
                 </select>
-                <div id="select_area" class="area-select">所在区域</div>
+                <div id="select_area" class="area-select placeholder-text">所在区域</div>
                 <textarea id="contact_request" rows="3" placeholder="请填写您的需求"></textarea>
             </div>
             <img src="./images/submit.png" class="miss-btn-img-3" alt="马上提交" onclick="submitContact()">
         </div>
+    </div>
+
+    <!-- Background Music -->
+    <audio id="bgMusic" src="https://qncdn.shwdsg.com/haier/output.mp3" loop autoplay preload="auto"></audio>
+    <div id="musicBtn" class="music-btn" style="display: none;">
+        <div class="music-icon">🎵</div>
     </div>
 
     <script>
@@ -95,7 +101,7 @@
             },
             callback: function (indexArr, data) {
                 let new_name = data[0].value + " " + data[1].value + " " + data[2].value
-                $("#select_area").html(new_name)
+                $("#select_area").html(new_name).removeClass('placeholder-text')
             }
         });
 
@@ -104,6 +110,13 @@
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
+
+        // Remove placeholder class when business is selected
+        $('#contact_business').on('change', function() {
+            if ($(this).val()) {
+                $(this).removeClass('placeholder-text');
+            }
+        });
 
         // Clear cache handler
         document.getElementById('clearCacheBtn').addEventListener('click', function() {
@@ -302,6 +315,66 @@
                 alert('网络错误，请稍后重试');
             });
         }
+
+        // Background Music Control
+        const audio = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        let isPlaying = false;
+
+        function playAudio() {
+            audio.play().then(() => {
+                isPlaying = true;
+                musicBtn.classList.add('playing');
+                musicBtn.style.display = 'flex';
+            }).catch(e => {
+                console.log('Autoplay blocked:', e);
+                musicBtn.style.display = 'flex';
+                musicBtn.classList.remove('playing');
+            });
+        }
+
+        function toggleMusic() {
+            if (isPlaying) {
+                audio.pause();
+                musicBtn.classList.remove('playing');
+                isPlaying = false;
+            } else {
+                audio.play();
+                musicBtn.classList.add('playing');
+                isPlaying = true;
+            }
+        }
+
+        musicBtn.addEventListener('click', toggleMusic);
+
+        // Auto play for WeChat and initial load
+        document.addEventListener('DOMContentLoaded', function() {
+            playAudio();
+            
+            // WeChat specific
+            document.addEventListener("WeixinJSBridgeReady", function () {
+                playAudio();
+            }, false);
+
+            if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
+                WeixinJSBridge.invoke('getNetworkType', {}, function (e) {
+                    playAudio();
+                });
+            }
+            
+            // First user interaction fallback
+            const userInteractionEvents = ['touchstart', 'click'];
+            
+            function handleInteraction() {
+                if (!isPlaying) {
+                    playAudio();
+                }
+            }
+
+            userInteractionEvents.forEach(event => {
+                document.body.addEventListener(event, handleInteraction, { once: true, capture: true });
+            });
+        });
     </script>
 </body>
 </html>

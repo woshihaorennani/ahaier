@@ -24,92 +24,130 @@ class LotteryLogic extends BaseLogic
                 return false;
             }
 
-            // 2. 查询今日可用奖品
-            $today = date('Y-m-d');
-            // 查询当天有库存的奖品
-            $prize = Lottery::where('dates', $today)
-                ->whereRaw('number_all > number_user')
-                ->limit(1)
-                ->find();
+            // 开启事务 (针对高并发，提前开启事务并加锁)
+            Db::startTrans();
+            try {
+                // 2. 查询今日可用奖品
+                $today = date('Y-m-d');
+                // 查询当天有库存的奖品，并加锁 (lock for update)
+                $prize = Lottery::where('dates', $today)
+                    ->whereRaw('number_all > number_user')
+                    ->limit(1)
+                    ->lock(true)
+                    ->find();
 
-            if (!$prize) {
-                return [
-                    'is_win' => 0,
-                    'message' => '今日奖品已派完'
-                ];
-            }
-
-            // 3. 校验奖品条件（用户限额、奖金池）
-            
-            // 3.1 用户是否还有中奖次数 (对比 can_win 字段)
-            if (isset($prize->can_win) && $prize->can_win > 0) {
-                $userWinCount = LotteryRecord::where('openid', $user->openid)
-                    ->where('lottery_id', $prize->id)
-                    ->where('is_win', 1)
-                    ->count();
-                if ($userWinCount >= $prize->can_win) {
+                if (!$prize) {
+                    Db::rollback();
                     return [
                         'is_win' => 0,
-                        'message' => '您已达到今日中奖上限'
+                        'message' => '今日奖品已派完'
                     ];
                 }
-            }
 
-            // 3.2 检查总奖金池 (bonuses_pool)
-            if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
-                $usedAmount = LotteryRecord::where('lottery_id', $prize->id)
-                    ->where('is_win', 1)
-                    ->sum('amount');
-                if ($usedAmount >= $prize->bonuses_pool) {
+                // 3. 校验奖品条件（用户限额、奖金池）
+                
+                // 3.1 用户是否还有中奖次数 (对比 can_win 字段)
+                if (isset($prize->can_win) && $prize->can_win > 0) {
+                    $userWinCount = LotteryRecord::where('openid', $user->openid)
+                        ->where('lottery_id', $prize->id)
+                        ->where('is_win', 1)
+                        ->count();
+                    if ($userWinCount >= $prize->can_win) {
+                        Db::rollback();
+                        return [
+                            'is_win' => 0,
+                            'message' => '您已达到今日中奖上限'
+                        ];
+                    }
+                }
+
+                // 3.2 检查总奖金池 (使用 distributed_amount 字段代替 sum 查询)
+                if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
+                    $usedAmount = $prize->distributed_amount; // 直接使用字段值
+                    
+                    if ($usedAmount >= $prize->bonuses_pool) {
+                        Db::rollback();
+                         return [
+                            'is_win' => 0,
+                            'message' => '奖池已空'
+                        ];
+                    }
+                    // 将已用金额暂存到对象中，供后续计算使用
+                    $prize->used_amount = $usedAmount;
+                }
+
+                // 5. 计算中奖金额
+                $min = floatval($prize->min);
+                $max = floatval($prize->max);
+
+                // 检查奖金池剩余金额
+                if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
+                    $remainingPool = $prize->bonuses_pool - ($prize->used_amount ?? 0);
+                    
+                    // 如果剩余金额连最小奖金都不够，直接返回未中奖
+                    if ($remainingPool < $min) {
+                        Db::rollback();
+                        return [
+                            'is_win' => 0,
+                            'message' => '奖池余额不足'
+                        ];
+                    }
+
+                    // 动态调整最大金额，确保 number_all 都能中出
+                    if ($prize->number_all > 0) {
+                        $remainingCount = $prize->number_all - $prize->number_user; // 剩余数量（含本次）
+                        
+                        // 为后续每个人预留最少金额 min
+                        $reservedForOthers = max(0, ($remainingCount - 1) * $min);
+                        
+                        // 本次允许的最大金额 = 剩余奖金 - 预留金额
+                        $safeMax = $remainingPool - $reservedForOthers;
+                        
+                        // 确保最大值不超过 safeMax，同时保证至少能发出 min
+                        // 优先保证当前用户能拿到 min (因为 remainingPool >= min 已校验)
+                        // 如果 safeMax < min，说明奖池紧张，无法完全保证后续用户，但当前用户必须满足 >= min
+                        $calculatedMax = min($max, $safeMax);
+                        $max = max($min, $calculatedMax);
+                    } else {
+                        // 如果没有总数量限制，则最大值受限于剩余奖金池
+                        $max = min($max, $remainingPool);
+                    }
+                }
+                
+                // 生成随机金额，保留2位小数
+                if ($max <= $min) {
+                    $randomAmount = $min;
+                } else {
+                    $randomAmount = $min + mt_rand() / mt_getrandmax() * ($max - $min);
+                }
+                
+                // 兜底检查：确保不超过剩余奖金池
+                if (isset($remainingPool) && $randomAmount > $remainingPool) {
+                    $randomAmount = $remainingPool;
+                }
+                
+                $amountStr = number_format($randomAmount, 2, '.', '');
+                
+                // 如果金额太小（例如0），则视为未中奖或异常
+                if ($randomAmount <= 0) {
+                     Db::rollback();
                      return [
                         'is_win' => 0,
                         'message' => '奖池已空'
                     ];
                 }
-                // 将已用金额暂存到对象中，供后续计算使用
-                $prize->used_amount = $usedAmount;
-            }
 
-            // 5. 计算中奖金额
-            $min = floatval($prize->min);
-            $max = floatval($prize->max);
-            
-            // 生成随机金额，保留2位小数
-            $randomAmount = $min + mt_rand() / mt_getrandmax() * ($max - $min);
-            
-            // 检查奖金池剩余金额，如果随机金额超过剩余金额，则取剩余金额
-            if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
-                $remaining = $prize->bonuses_pool - ($prize->used_amount ?? 0);
-                if ($randomAmount > $remaining) {
-                    $randomAmount = $remaining;
-                }
-            }
-            
-            $amountStr = number_format($randomAmount, 2, '.', '');
-            
-            // 如果金额太小（例如0），则视为未中奖或异常
-            if ($randomAmount <= 0) {
-                 return [
-                    'is_win' => 0,
-                    'message' => '奖池已空'
-                ];
-            }
-
-            // 6. 开启事务记录
-            Db::startTrans();
-            try {
-                // 增加已发放数量
-                // 使用乐观锁更新
+                // 更新奖品库存和已发放金额
                 $res = Lottery::where('id', $prize->id)
-                    ->where('number_user', '<', Db::raw('number_all'))
                     ->inc('number_user')
+                    ->inc('distributed_amount', $randomAmount)
                     ->update();
 
                 if (!$res) {
                     Db::rollback();
                     return [
                         'is_win' => 0,
-                        'message' => '手慢了，奖品刚发完'
+                        'message' => '更新失败'
                     ];
                 }
 
@@ -124,17 +162,14 @@ class LotteryLogic extends BaseLogic
                     'update_time' => time()
                 ]);
 
-                // 发送红包
+                Db::commit();
+
+                // 发送红包 (建议：在大流量下，外部API调用应移出数据库事务，避免长时间占用锁)
                 // $sendRes = self::sendRedPacket($user->openid, $randomAmount);
                 // if ($sendRes['errcode'] != 0) {
-                //     Db::rollback();
-                //     return [
-                //         'is_win' => 0,
-                //         'message' => '奖品发放失败:' . $sendRes['errmsg']
-                //     ];
+                //     // 记录错误日志，后续重试
+                //     // Log::error('RedPacket Fail: ' . $sendRes['errmsg']);
                 // }
-
-                Db::commit();
 
                 return [
                     'is_win' => 1,
