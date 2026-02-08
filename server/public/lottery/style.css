@@ -54,7 +54,7 @@ body {
     justify-content: center;
     align-items: flex-end;
     animation: fadeInUp 1s both;
-    animation-delay: 2s;
+    animation-delay: 0.5s;
 }
 
 .red-bg {
