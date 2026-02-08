@@ -37,7 +37,7 @@ function getElementPlusStylePaths() {
 }
 
 export default defineConfig({
-    base: '/admin/',
+    base: '/haier_admin/',
     server: {
         host: '0.0.0.0',
         hmr: true,
