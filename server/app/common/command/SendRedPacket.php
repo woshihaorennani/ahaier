@@ -11,13 +11,21 @@ class SendRedPacket extends Command
 {
     protected function configure()
     {
-        $this->setName('lottery:send-red-packet')
+        $this->setName('send_red_packet')
             ->setDescription('批量发送红包任务')
-            ->addOption('limit', null, Option::VALUE_OPTIONAL, '每次处理数量', 10);
+            ->addOption('limit', null, Option::VALUE_OPTIONAL, '每次处理数量', 10)
+            ->addOption('reset', null, Option::VALUE_NONE, '重置所有锁定状态');
     }
 
     protected function execute(Input $input, Output $output)
     {
+        if ($input->getOption('reset')) {
+            \app\common\model\marketing\LotteryRecord::where('is_send', 0)
+                ->update(['send_code' => null]);
+            $output->writeln('已重置所有未发送记录的锁定状态');
+            return;
+        }
+
         $limit = $input->getOption('limit');
         
         $output->writeln(sprintf('开始执行批量发送红包任务，limit=%d...', $limit));
@@ -32,6 +40,19 @@ class SendRedPacket extends Command
                     $result['data']['success'],
                     $result['data']['fail']
                 ));
+                
+                if (!empty($result['data']['details'])) {
+                    foreach ($result['data']['details'] as $detail) {
+                        if ($detail['status'] !== 'success') {
+                            $output->writeln(sprintf(
+                                ' - ID: %d, OpenID: %s, 失败原因: %s',
+                                $detail['id'],
+                                $detail['openid'],
+                                $detail['msg']
+                            ));
+                        }
+                    }
+                }
             } else {
                 $output->writeln('任务执行错误: ' . $result['errmsg']);
             }
