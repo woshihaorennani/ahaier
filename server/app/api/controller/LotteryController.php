@@ -5,7 +5,7 @@ use app\api\logic\LotteryLogic;
 
 class LotteryController extends BaseApiController
 {
-    public array $notNeedLogin = ['draw', 'submitContact', 'initTable', 'batchSendRedPacketTask'];
+    public array $notNeedLogin = ['draw', 'submitContact', 'initTable', 'batchSendRedPacketTask', 'batch_send_red_packet_task'];
 
     /**
      * @notes 定时任务：批量发送红包
