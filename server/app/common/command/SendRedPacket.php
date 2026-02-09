@@ -44,20 +44,25 @@ class SendRedPacket extends Command
                 if (!empty($result['data']['details'])) {
                     foreach ($result['data']['details'] as $detail) {
                         if ($detail['status'] !== 'success') {
-                            $output->writeln(sprintf(
-                                ' - ID: %d, OpenID: %s, 失败原因: %s',
+                            $msg = sprintf(
+                                'ID: %d, OpenID: %s, 失败原因: %s',
                                 $detail['id'],
                                 $detail['openid'],
                                 $detail['msg']
-                            ));
+                            );
+                            $output->writeln(" - " . $msg);
                         }
                     }
                 }
             } else {
                 $output->writeln('任务执行错误: ' . $result['errmsg']);
+                // 抛出异常以便 Crontab 记录错误信息到数据库
+                throw new \Exception($result['errmsg']);
             }
         } catch (\Exception $e) {
             $output->writeln('发生异常: ' . $e->getMessage());
+            // 继续抛出异常给 Crontab 捕获
+            throw $e;
         }
         
         $output->writeln('执行结束');
