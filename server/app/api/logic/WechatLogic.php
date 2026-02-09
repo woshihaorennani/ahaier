@@ -132,16 +132,18 @@ class WechatLogic extends BaseLogic
      * @param string $openid
      * @return bool
      */
-    public static function syncUser(string $openid)
+    public static function syncUser(string $openid, string $is_from = '')
     {
         try {
             $user = \app\common\model\marketing\WeixinUser::where('openid', $openid)->find();
             if ($user) {
                 $user->update_time = time();
+                $user->is_from = $is_from;
                 $user->save();
             } else {
                 \app\common\model\marketing\WeixinUser::create([
                     'openid' => $openid,
+                    'is_from' => $is_from,
                     'unionid' => '',
                     'nickname' => '',
                     'avatar' => '',

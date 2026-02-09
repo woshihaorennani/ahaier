@@ -95,7 +95,8 @@ class WechatController extends BaseApiController
         if (empty($openid)) {
             return $this->fail('openid不能为空');
         }
-        $result = WechatLogic::syncUser($openid);
+        $is_from = $this->request->post('is_from');
+        $result = WechatLogic::syncUser($openid, $is_from);
         if ($result === false) {
             return $this->fail(WechatLogic::getError());
         }

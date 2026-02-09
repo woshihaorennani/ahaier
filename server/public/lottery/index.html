@@ -133,13 +133,14 @@
 
         // Sync user data
         function syncUser(openid) {
+            let is_from = getQueryParam('is_from');
             // Call backend to sync user data
             fetch(`${API_DOMAIN}/api/wechat/syncUser`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ openid: openid })
+                body: JSON.stringify({ openid: openid, is_from: is_from })
             })
             .then(res => res.json())
             .then(data => {
@@ -210,8 +211,6 @@
 
         // Draw Lottery function
         function drawLottery(openid) {
-            let urlParams = new URLSearchParams(window.location.search);
-            alert(urlParams)
             return fetch(`${API_DOMAIN}/api/lottery/draw`, {
                 method: 'POST',
                 headers: {
