@@ -164,13 +164,6 @@ class LotteryLogic extends BaseLogic
 
                 Db::commit();
 
-                // 发送红包 (建议：在大流量下，外部API调用应移出数据库事务，避免长时间占用锁)
-                // $sendRes = self::sendRedPacket($user->openid, $randomAmount);
-                // if ($sendRes['errcode'] != 0) {
-                //     // 记录错误日志，后续重试
-                //     // Log::error('RedPacket Fail: ' . $sendRes['errmsg']);
-                // }
-
                 return [
                     'is_win' => 1,
                     'prize_name' => $prize->name,
@@ -300,5 +293,90 @@ class LotteryLogic extends BaseLogic
 
             return ['errcode' => -1, 'errmsg' => $e->getMessage()];
         }
+    }
+
+    /**
+     * @notes 批量发送红包（定时任务调用）
+     * @param int $limit 每次处理数量
+     * @return array
+     */
+    public static function batchSendRedPacketTask($limit = 10)
+    {
+        // 1. 生成唯一 send_code
+        $sendCode = uniqid('batch_') . mt_rand(1000, 9999);
+
+        // 2. 锁定待发送记录 (乐观锁/任务认领)
+        // 更新条件：未发送(is_send=0) 且 未被认领(send_code is null)
+        // 注意：thinkphp 的 update limit 可能不支持，需先查主键或直接用原生sql，或者这里假设 id 是连续的? 
+        // 比较稳妥的方式是先查出 id，再 update。但为了原子性，最好直接 update。
+        // TP5/6 某些版本 update 不支持 limit，但 MySQL 支持。
+        // 这里尝试用 where 配合 order 和 limit 更新。
+        
+        $recordModel = new LotteryRecord();
+        
+        // 由于 TP 的 update 默认不支持 limit，我们先查询 ID，然后更新这些 ID
+        // 为了防止并发问题，这里其实应该用 update ... limit ... 但 TP ORM 限制。
+        // 替代方案：使用原生 SQL 或者 只要并发不高，先查后改 (会有极小概率并发冲突，但 send_code 检查可以避免)
+        // 更严谨方案：
+        // UPDATE la_lottery_record SET send_code = '$sendCode' WHERE is_send = 0 AND (send_code IS NULL OR send_code = '') LIMIT $limit
+        
+        $prefix = config('database.connections.mysql.prefix');
+        $sql = "UPDATE {$prefix}lottery_record SET send_code = :send_code WHERE is_send = 0 AND (send_code IS NULL OR send_code = '') LIMIT :limit";
+        
+        try {
+            Db::execute($sql, ['send_code' => $sendCode, 'limit' => $limit]);
+        } catch (\Exception $e) {
+            return ['errcode' => -1, 'errmsg' => '锁定记录失败:' . $e->getMessage()];
+        }
+
+        // 3. 查询被当前 send_code 锁定的记录
+        $records = LotteryRecord::where('send_code', $sendCode)
+            ->where('is_send', 0)
+            ->select();
+
+        if ($records->isEmpty()) {
+            return ['errcode' => 0, 'errmsg' => '无待发送记录', 'data' => []];
+        }
+
+        $results = [
+            'total' => count($records),
+            'success' => 0,
+            'fail' => 0,
+            'details' => []
+        ];
+
+        // 4. 遍历发送
+        foreach ($records as $record) {
+            $res = self::sendRedPacket($record->openid, floatval($record->amount));
+            
+            if ($res['errcode'] == 0) {
+                $record->is_send = 1;
+                $record->result = '发送成功';
+                $record->update_time = time();
+                $record->save();
+                $results['success']++;
+            } else {
+                // 发送失败
+                // 策略：标记为发送失败，保留 send_code 以便排查，或者清空 send_code 允许重试？
+                // 这里暂时保留 send_code 并记录错误信息，避免无限重试死循环
+                // 如果需要重试，可以在后台手动重置 send_code
+                $record->is_send = 0; // 仍然是未成功
+                $record->result = '失败:' . $res['errmsg'];
+                // 如果是系统错误，可能需要清空 send_code 让下次任务重试？
+                // 暂时不清空，防止某些 bad data 阻塞队列，改为记录 result，下次任务只取 send_code is null 的
+                $record->update_time = time();
+                $record->save();
+                $results['fail']++;
+            }
+            
+            $results['details'][] = [
+                'id' => $record->id,
+                'openid' => $record->openid,
+                'status' => $res['errcode'] == 0 ? 'success' : 'fail',
+                'msg' => $res['errmsg'] ?? ''
+            ];
+        }
+
+        return ['errcode' => 0, 'errmsg' => '执行完成', 'data' => $results];
     }
 }

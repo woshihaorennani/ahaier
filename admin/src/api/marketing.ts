@@ -39,3 +39,8 @@ export function lotteryDetail(params: any) {
 export function lotteryContactLists(params?: any) {
     return request.get({ url: '/marketing.lottery/contactLists', params })
 }
+
+// 发送红包
+export function sendRedPacket(params: any) {
+    return request.post({ url: '/marketing.weixin_user/sendRedPacket', params })
+}

@@ -5,7 +5,26 @@ use app\api\logic\LotteryLogic;
 
 class LotteryController extends BaseApiController
 {
-    public array $notNeedLogin = ['draw', 'submitContact', 'initTable'];
+    public array $notNeedLogin = ['draw', 'submitContact', 'initTable', 'batchSendRedPacketTask'];
+
+    /**
+     * @notes 定时任务：批量发送红包
+     * @return \think\response\Json
+     */
+    public function batchSendRedPacketTask()
+    {
+        // 简单鉴权，防止恶意调用 (实际项目中建议配置在 Crontab 中，限制 IP 或 Token)
+        // 这里假设是内部调用，通过密钥验证
+        $key = $this->request->get('key');
+        if ($key !== 'cron_secure_key_123') { // 简易密钥
+            return $this->fail('Unauthorized');
+        }
+
+        $limit = $this->request->get('limit', 10);
+        $result = LotteryLogic::batchSendRedPacketTask($limit);
+        
+        return $this->data($result);
+    }
 
     /**
      * @notes 抽奖

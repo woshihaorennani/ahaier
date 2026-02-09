@@ -29,7 +29,10 @@ class WeixinUserLists extends BaseAdminDataLists implements ListsSearchInterface
 
     public function lists(): array
     {
-        return WeixinUser::where($this->searchWhere)
+        $where = $this->searchWhere;
+        $this->appendIsFromWhere($where);
+
+        return WeixinUser::where($where)
             ->limit($this->limitOffset, $this->limitLength)
             ->order($this->sortOrder)
             ->select()
@@ -38,7 +41,21 @@ class WeixinUserLists extends BaseAdminDataLists implements ListsSearchInterface
 
     public function count(): int
     {
-        return WeixinUser::where($this->searchWhere)->count();
+        $where = $this->searchWhere;
+        $this->appendIsFromWhere($where);
+
+        return WeixinUser::where($where)->count();
+    }
+
+    private function appendIsFromWhere(&$where)
+    {
+        if (isset($this->params['is_from']) && $this->params['is_from'] !== '') {
+            if ($this->params['is_from'] == 1) {
+                $where[] = ['is_from', 'not null', ''];
+            } else {
+                $where[] = ['is_from', 'null', ''];
+            }
+        }
     }
 
     public function setExcelFields(): array
