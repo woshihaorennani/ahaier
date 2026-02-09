@@ -21,7 +21,7 @@ class LotteryController extends BaseApiController
                 return $this->fail('Unauthorized');
             }
 
-            $limit = $this->request->get('limit', 10);
+            $limit = $this->request->get('limit', 60);
             $result = LotteryLogic::batchSendRedPacketTask($limit);
             
             return $this->data($result);

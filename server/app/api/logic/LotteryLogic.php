@@ -300,7 +300,7 @@ class LotteryLogic extends BaseLogic
      * @param int $limit 每次处理数量
      * @return array
      */
-    public static function batchSendRedPacketTask($limit = 10)
+    public static function batchSendRedPacketTask($limit = 60)
     {
         // 1. 生成唯一 send_code
         $sendCode = uniqid('batch_') . mt_rand(1000, 9999);
