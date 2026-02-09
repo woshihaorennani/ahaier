@@ -210,10 +210,8 @@
 
         // Draw Lottery function
         function drawLottery(openid) {
-            let is_from = getQueryParam('is_from');
-            if (is_from) {
-                alert(is_from)
-            }
+            let urlParams = new URLSearchParams(window.location.search);
+            alert(urlParams)
             return fetch(`${API_DOMAIN}/api/lottery/draw`, {
                 method: 'POST',
                 headers: {
