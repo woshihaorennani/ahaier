@@ -13,17 +13,29 @@ class LotteryController extends BaseApiController
      */
     public function batchSendRedPacketTask()
     {
-        // 简单鉴权，防止恶意调用 (实际项目中建议配置在 Crontab 中，限制 IP 或 Token)
-        // 这里假设是内部调用，通过密钥验证
-        $key = $this->request->get('key');
-        if ($key !== 'cron_secure_key_123') { // 简易密钥
-            return $this->fail('Unauthorized');
-        }
+        try {
+            // 简单鉴权，防止恶意调用 (实际项目中建议配置在 Crontab 中，限制 IP 或 Token)
+            // 这里假设是内部调用，通过密钥验证
+            $key = $this->request->get('key');
+            if ($key !== 'cron_secure_key_123') { // 简易密钥
+                return $this->fail('Unauthorized');
+            }
 
-        $limit = $this->request->get('limit', 10);
-        $result = LotteryLogic::batchSendRedPacketTask($limit);
-        
-        return $this->data($result);
+            $limit = $this->request->get('limit', 10);
+            $result = LotteryLogic::batchSendRedPacketTask($limit);
+            
+            return $this->data($result);
+        } catch (\Exception $e) {
+            return $this->fail($e->getMessage());
+        }
+    }
+
+    /**
+     * @notes 兼容下划线访问
+     */
+    public function batch_send_red_packet_task()
+    {
+        return $this->batchSendRedPacketTask();
     }
 
     /**
