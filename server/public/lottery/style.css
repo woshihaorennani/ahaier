@@ -34,7 +34,7 @@ body {
 /* Gift Image */
 .gift-img {
     position: absolute;
-    top: 0;
+    top: 10%;
     left: 0;
     width: 100%;
     z-index: 1;
@@ -47,7 +47,7 @@ body {
 /* Bottom Area */
 .bottom-area {
     position: absolute;
-    bottom: 0;
+    bottom: -5%;
     left: 0;
     width: 100%;
     z-index: 3;
