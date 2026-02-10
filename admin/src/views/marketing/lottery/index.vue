@@ -37,11 +37,12 @@
                 <el-table-column label="ID" prop="id" min-width="80" />
                 <el-table-column label="奖品名称" prop="name" min-width="150" show-tooltip-when-overflow />
                 <el-table-column label="可用日期" prop="dates" min-width="120" />
-                <el-table-column label="特等奖" min-width="80">
+                <el-table-column label="特等奖金额" min-width="80">
                     <template #default="{ row }">
                         ¥{{ row.special }}
                     </template>
                 </el-table-column>
+                <el-table-column label="特等奖数量" prop="special_number" min-width="80" />
                 <el-table-column label="中奖区间" min-width="120">
                     <template #default="{ row }">
                         ¥{{ row.min }} - ¥{{ row.max }}

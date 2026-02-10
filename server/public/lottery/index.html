@@ -233,6 +233,14 @@
 
         // Lottery Draw Handler
         document.querySelector('.open-btn').addEventListener('click', function() {
+            // Check time 9:00 - 23:59
+            const now = new Date();
+            const hour = now.getHours();
+            if (hour < 9) {
+                alert('活动时间为每日 9:00 - 23:59');
+                return;
+            }
+
             if (!openid) {
                 // If openid is missing, try to redirect or alert
                 redirectToAuth();

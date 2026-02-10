@@ -19,8 +19,11 @@
                     class="w-full"
                 />
             </el-form-item>
-            <el-form-item label="特等奖" prop="special">
+            <el-form-item label="特等奖金额" prop="special">
                 <el-input-number v-model="formData.special" :min="0" :precision="0" />
+            </el-form-item>
+            <el-form-item label="特等奖数量" prop="special_number">
+                <el-input-number v-model="formData.special_number" :min="0" :precision="0" />
             </el-form-item>
             <el-form-item label="中奖区间" required>
                 <div class="flex items-center">
@@ -75,7 +78,8 @@ const formData = reactive({
     bonuses_pool: 0,
     number_all: 0,
     can_win: 1,
-    special: 0
+    special: 0,
+    special_number: 0
 })
 
 const rules = reactive<FormRules>({
