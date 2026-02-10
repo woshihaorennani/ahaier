@@ -7,10 +7,11 @@
 body {
     height: 100vh;
     width: 100vw;
-    background: url('./images/page1_bj.jpg') no-repeat center center;
-    background-size: cover;
+    background: url('https://qncdn.shwdsg.com/haier/pages1_bg.png') no-repeat center center;
+    background-size: 100%;
     overflow: hidden;
     position: relative;
+    background-position: top;
 }
 
 .container {
@@ -25,7 +26,7 @@ body {
 /* Title Image */
 .title-img {
     width: 80%;
-    margin-top: 12%;
+    margin-top: 16%;
     z-index: 2;
     animation: bounceInDown 2s both;
 }

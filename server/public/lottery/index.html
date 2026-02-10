@@ -8,7 +8,7 @@
     <script src="https://qncdn.shwdsg.com/js/city_list.js"></script>
     <script src="https://qncdn.shwdsg.com/js/mobileSelect.js"></script>
     <link rel="stylesheet" href="https://qncdn.shwdsg.com/css/mobileSelect.css">
-    <link rel="stylesheet" href="./style.css?version=1.0.8">
+    <link rel="stylesheet" href="./style.css?version=1.0.9">
 </head>
 <body>
     <div class="container">
@@ -16,7 +16,7 @@
         <button id="clearCacheBtn" style="position: absolute; top: 10px; left: 10px; z-index: 1000; padding: 5px 10px; background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 4px; font-size: 12px;opacity: 0;">清除缓存</button>
 
         <!-- Title -->
-        <img src="https://qncdn.shwdsg.com/haier/page1_title.png" class="title-img" alt="绿电红包大派送">
+        <img src="https://qncdn.shwdsg.com/haier/page1_title_1.png" class="title-img" alt="绿电红包大派送">
         
         <!-- Gift -->
         <img src="./images/page1_gift.png" class="gift-img" alt="Gift Box">
@@ -122,6 +122,14 @@
             if ($(this).val()) {
                 $(this).removeClass('placeholder-text');
             }
+        });
+
+        // 解决安卓键盘收起后页面底部留白/不回弹问题
+        $(document).on('focusout', 'input, textarea', function () {
+            setTimeout(function () {
+                var scrollHeight = document.documentElement.scrollTop || document.body.scrollTop || 0;
+                window.scrollTo(0, Math.max(scrollHeight - 1, 0));
+            }, 100);
         });
 
         // Clear cache handler
