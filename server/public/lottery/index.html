@@ -212,6 +212,27 @@
             redirectToAuth();
         } else {
             console.log('OpenID retrieved:', openid);
+            checkUserStatus(openid);
+        }
+
+        // Check user status (win record and contact info)
+        function checkUserStatus(openid) {
+            fetch(`${API_DOMAIN}/api/lottery/checkStatus?openid=${openid}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.code === 1) {
+                    const data = res.data;
+                    console.log('User status:', data);
+                    
+                    if (data.has_win || data.has_contact) {
+                        $('.open-btn').css({'pointer-events': 'none'});
+                        alert('今天你的抽奖次数已经用完');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error checking user status:', error);
+            });
         }
 
         // Close modal function

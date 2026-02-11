@@ -389,14 +389,20 @@ class LotteryLogic extends BaseLogic
     public static function getUserStatus($openid)
     {
         try {
-            // 查找最新的中奖记录
+            // 获取今日起止时间戳
+            $todayStart = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+            $todayEnd = mktime(23, 59, 59, date('m'), date('d'), date('Y'));
+
+            // 查找今日最新的中奖记录
             $record = LotteryRecord::where('openid', $openid)
                 ->where('is_win', 1)
+                ->whereBetween('create_time', [$todayStart, $todayEnd])
                 ->order('create_time', 'desc')
                 ->find();
             
-            // 查找最新的联系人记录
+            // 查找今日最新的联系人记录
             $contact = \app\common\model\marketing\LotteryContact::where('openid', $openid)
+                ->whereBetween('create_time', [$todayStart, $todayEnd])
                 ->order('create_time', 'desc')
                 ->find();
 
