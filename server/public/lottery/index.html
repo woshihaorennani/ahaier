@@ -92,6 +92,7 @@
         // const API_DOMAIN = 'http://localhost';
         var mobileSelect4 = {}
         let widthData = ["33%","33%","34%"]
+        let hasPlayedToday = false; // Add global flag
 
         // 实例省市区选择
         mobileSelect4 = new MobileSelect({
@@ -225,8 +226,7 @@
                     console.log('User status:', data);
                     
                     if (data.has_win || data.has_contact) {
-                        $('.open-btn').css({'pointer-events': 'none'});
-                        alert('今天你的抽奖次数已经用完');
+                        hasPlayedToday = true;
                     }
                 }
             })
@@ -254,6 +254,11 @@
 
         // Lottery Draw Handler
         document.querySelector('.open-btn').addEventListener('click', function() {
+            if (hasPlayedToday) {
+                alert('今天你的抽奖次数已经用完');
+                return;
+            }
+            
             // Check time 9:00 - 23:59
             const now = new Date();
             const hour = now.getHours();
@@ -288,6 +293,7 @@
                 if (res.code === 1) {
                     const data = res.data;
                     if (data.is_win === 1) {
+                        hasPlayedToday = true;
                         // Update prize amount
                         document.getElementById('prizeValue').innerText = data.amount;
                         // Show prize modal
@@ -344,6 +350,7 @@
             .then(data => {
                 if (data.code === 1) {
                     alert('提交成功');
+                    hasPlayedToday = true;
                     closeModal('contactModal');
                     // Reset form
                     document.getElementById('contact_name').value = '';
