@@ -5,7 +5,7 @@ use app\api\logic\LotteryLogic;
 
 class LotteryController extends BaseApiController
 {
-    public array $notNeedLogin = ['draw', 'submitContact', 'initTable', 'batchSendRedPacketTask', 'batch_send_red_packet_task'];
+    public array $notNeedLogin = ['draw', 'submitContact', 'initTable', 'batchSendRedPacketTask', 'batch_send_red_packet_task', 'checkStatus', 'checkstatus', 'check_status'];
 
     /**
      * @notes 定时任务：批量发送红包
@@ -116,5 +116,18 @@ class LotteryController extends BaseApiController
         } catch (\Exception $e) {
             return $this->fail($e->getMessage());
         }
+    }
+
+    /**
+     * @notes 检查用户状态
+     */
+    public function checkStatus()
+    {
+        $openid = $this->request->get('openid');
+        if (empty($openid)) {
+            return $this->fail('OpenID不能为空');
+        }
+        $result = LotteryLogic::getUserStatus($openid);
+        return $this->success('获取成功', $result);
     }
 }

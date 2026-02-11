@@ -24,6 +24,7 @@ class LotteryLogic extends BaseLogic
                 return false;
             }
 
+
             // 开启事务 (针对高并发，提前开启事务并加锁)
             Db::startTrans();
             try {
@@ -378,5 +379,42 @@ class LotteryLogic extends BaseLogic
         }
 
         return ['errcode' => 0, 'errmsg' => '执行完成', 'data' => $results];
+    }
+
+    /**
+     * @notes 获取用户状态（中奖记录、联系人记录）
+     * @param $openid
+     * @return array
+     */
+    public static function getUserStatus($openid)
+    {
+        try {
+            // 查找最新的中奖记录
+            $record = LotteryRecord::where('openid', $openid)
+                ->where('is_win', 1)
+                ->order('create_time', 'desc')
+                ->find();
+            
+            // 查找最新的联系人记录
+            $contact = \app\common\model\marketing\LotteryContact::where('openid', $openid)
+                ->order('create_time', 'desc')
+                ->find();
+
+            return [
+                'has_win' => !!$record,
+                'win_record' => $record,
+                'has_contact' => !!$contact,
+                'contact_record' => $contact
+            ];
+        } catch (\Exception $e) {
+            // Database error fallback
+            return [
+                'has_win' => false,
+                'win_record' => null,
+                'has_contact' => false,
+                'contact_record' => null,
+                'error' => $e->getMessage()
+            ];
+        }
     }
 }
