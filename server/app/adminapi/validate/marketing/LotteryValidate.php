@@ -21,6 +21,7 @@ class LotteryValidate extends BaseValidate
         'number_all' => 'require|integer|min:0',
         'can_win' => 'require|integer|min:0',
         'special' => 'integer|min:0',
+        'special_number' => 'integer|min:0',
     ];
 
     protected $message = [
@@ -42,8 +43,8 @@ class LotteryValidate extends BaseValidate
     ];
 
     protected $scene = [
-        'add' => ['name', 'dates', 'min', 'max', 'bonuses_pool', 'number_all', 'can_win', 'special'],
-        'edit' => ['id', 'name', 'dates', 'min', 'max', 'bonuses_pool', 'number_all', 'can_win', 'special'],
+        'add' => ['name', 'dates', 'min', 'max', 'bonuses_pool', 'number_all', 'can_win', 'special', 'special_number'],
+        'edit' => ['id', 'name', 'dates', 'min', 'max', 'bonuses_pool', 'number_all', 'can_win', 'special', 'special_number'],
         'delete' => ['id'],
         'detail' => ['id'],
     ];

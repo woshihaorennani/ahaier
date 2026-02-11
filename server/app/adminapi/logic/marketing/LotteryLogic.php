@@ -30,6 +30,7 @@ class LotteryLogic extends BaseLogic
                 'number_all' => $params['number_all'] ?? 0,
                 'can_win' => $params['can_win'] ?? 1,
                 'special' => $params['special'] ?? 0,
+                'special_number' => $params['special_number'] ?? 0,
                 'create_time' => time(),
                 'update_time' => time(),
             ]);
@@ -58,6 +59,7 @@ class LotteryLogic extends BaseLogic
                 'number_all' => $params['number_all'] ?? 0,
                 'can_win' => $params['can_win'] ?? 1,
                 'special' => $params['special'] ?? 0,
+                'special_number' => $params['special_number'] ?? 0,
                 'update_time' => time(),
             ]);
             return true;
