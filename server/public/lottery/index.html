@@ -126,10 +126,9 @@
         });
 
         // 解决安卓键盘收起后页面底部留白/不回弹问题
-        $(document).on('focusout', 'input, textarea', function () {
+        $(document).on('focusout', 'input, textarea, select', function () {
             setTimeout(function () {
-                var scrollHeight = document.documentElement.scrollTop || document.body.scrollTop || 0;
-                window.scrollTo(0, Math.max(scrollHeight - 1, 0));
+                window.scrollTo(0, 0);
             }, 100);
         });
 
