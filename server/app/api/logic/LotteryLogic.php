@@ -128,9 +128,10 @@ class LotteryLogic extends BaseLogic
                 }
                 
                 $amountStr = number_format($randomAmount, 2, '.', '');
+                $actualAmount = floatval($amountStr);
                 
                 // 如果金额太小（例如0），则视为未中奖或异常
-                if ($randomAmount <= 0) {
+                if ($actualAmount <= 0) {
                      Db::rollback();
                      return [
                         'is_win' => 0,
@@ -141,7 +142,7 @@ class LotteryLogic extends BaseLogic
                 // 更新奖品库存和已发放金额
                 $res = Lottery::where('id', $prize->id)
                     ->inc('number_user')
-                    ->inc('distributed_amount', $randomAmount)
+                    ->inc('distributed_amount', $actualAmount)
                     ->update();
 
                 if (!$res) {
