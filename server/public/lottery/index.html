@@ -190,36 +190,32 @@
 
         // Check if openid exists
         let openid = getQueryParam('u_openid');
+
         if (openid) {
             // If openid is in URL, save it to localStorage
             localStorage.setItem('u_openid', openid);
-            syncUser(openid);
         } else {
             // If not in URL, check localStorage
             openid = localStorage.getItem('u_openid');
-            
-            // 如果本地缓存有 openid，也要同步一次用户数据，确保数据库有记录
-            if (openid) {
-                syncUser(openid);
-            } else {
-                // If neither has openid, redirect to auth
-                redirectToAuth();
-            }
         }
 
         // Local development check
         if (!openid && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
              openid = 'local_test_openid';
              localStorage.setItem('u_openid', openid);
-             syncUser(openid);
              console.log('Local environment detected, using default OpenID:', openid);
         }
 
-        if (!openid) {
-            redirectToAuth();
-        } else {
+        if (openid) {
+            // 只要有openid，就同步用户数据
+            syncUser(openid);
+            
             console.log('OpenID retrieved:', openid);
+            alert('当前OpenID: ' + openid);
             checkUserStatus(openid);
+        } else {
+            // If no openid found, redirect to auth
+            redirectToAuth();
         }
 
         // Check user status (win record and contact info)
