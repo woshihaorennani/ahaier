@@ -190,7 +190,7 @@
 
         // Check if openid exists
         let openid = getQueryParam('u_openid');
-
+        alert('openid:' + openid);
         if (openid) {
             // If openid is in URL, save it to localStorage
             localStorage.setItem('u_openid', openid);
