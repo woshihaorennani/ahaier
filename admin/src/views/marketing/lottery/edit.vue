@@ -20,7 +20,7 @@
                 />
             </el-form-item>
             <el-form-item label="特等奖金额" prop="special">
-                <el-input-number v-model="formData.special" :min="0" :precision="0" />
+                <el-input-number v-model="formData.special" :min="0" :precision="2" />
             </el-form-item>
             <el-form-item label="特等奖数量" prop="special_number">
                 <el-input-number v-model="formData.special_number" :min="0" :precision="0" />
