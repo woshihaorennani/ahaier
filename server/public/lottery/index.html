@@ -220,6 +220,7 @@
             redirectToAuth();
         } else {
             console.log('OpenID retrieved:', openid);
+            alert('当前OpenID: ' + openid);
             checkUserStatus(openid);
         }
 
@@ -262,7 +263,7 @@
         // Lottery Draw Handler
         document.querySelector('.open-btn').addEventListener('click', function() {
             if (hasPlayedToday) {
-                alert('今天你的抽奖次数已经用完');
+                showToast('今天你的抽奖次数已经用完');
                 return;
             }
             
