@@ -20,7 +20,7 @@ class LotteryValidate extends BaseValidate
         'bonuses_pool' => 'require|float|min:0',
         'number_all' => 'require|integer|min:0',
         'can_win' => 'require|integer|min:0',
-        'special' => 'integer|min:0',
+        'special' => 'float|min:0',
         'special_number' => 'integer|min:0',
     ];
 
