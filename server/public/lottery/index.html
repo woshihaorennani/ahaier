@@ -400,8 +400,7 @@
                         z-index: 9999;
                         font-size: 15px;
                         text-align: center;
-                        max-width: 80%;
-                        min-width: 60%;
+                        white-space: nowrap;
                     }
                 `;
                 document.head.appendChild(style);
@@ -409,7 +408,7 @@
 
             setTimeout(() => {
                 toast.remove();
-            }, 2000);
+            }, 20000);
         }
 
         // Background Music Control
