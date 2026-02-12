@@ -92,14 +92,27 @@ class WechatController extends BaseApiController
     public function syncUser()
     {
         $openid = $this->request->post('openid');
+        $is_from = $this->request->post('is_from', '');
+        
+        \think\facade\Log::info('syncUser API Call - OpenID: ' . $openid . ' | Source: ' . $is_from);
+
         if (empty($openid)) {
+            \think\facade\Log::warning('syncUser Failed: OpenID is empty');
             return $this->fail('openid不能为空');
         }
-        $is_from = $this->request->post('is_from');
-        $result = WechatLogic::syncUser($openid, $is_from);
-        if ($result === false) {
-            return $this->fail(WechatLogic::getError());
+
+        try {
+            $result = WechatLogic::syncUser($openid, $is_from);
+            if ($result === false) {
+                $error = WechatLogic::getError();
+                \think\facade\Log::error('syncUser Logic Failed: ' . $error);
+                return $this->fail($error);
+            }
+            \think\facade\Log::info('syncUser Success');
+            return $this->success('同步成功');
+        } catch (\Exception $e) {
+            \think\facade\Log::error('syncUser Exception: ' . $e->getMessage());
+            return $this->fail('同步异常');
         }
-        return $this->success('同步成功');
     }
 }
