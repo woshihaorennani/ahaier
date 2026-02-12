@@ -160,6 +160,7 @@ class WechatLogic extends BaseLogic
             }
             return true;
         } catch (\Exception $e) {
+            \think\facade\Log::error('Sync User Error: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
             self::setError('同步用户失败:' . $e->getMessage());
             return false;
         }
