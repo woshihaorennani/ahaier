@@ -113,25 +113,32 @@ class LotteryLogic extends BaseLogic
                     $specialUsed = $prize->special_user ?? 0;
                     
                     if ($specialUsed < $prize->special_number) {
-                        $specialAmount = floatval($prize->special);
-                        
-                        // 检查奖金池是否足够支付特等奖
-                        if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
-                            $remainingPool = $prize->bonuses_pool - ($prize->used_amount ?? 0);
-                            if ($remainingPool < $specialAmount) {
-                                // 奖池不足，无法发放特等奖
-                                Db::rollback();
-                                self::recordLog($user->openid, 0, 0, '特等奖奖池余额不足', ['lottery_id' => $prize->id, 'remaining' => $remainingPool, 'special' => $specialAmount]);
-                                return [
-                                    'is_win' => 0,
-                                    'message' => '奖池余额不足'
-                                ];
+                        // 增加随机性：特等奖在剩余名额中随机抽取，而不是先到先得
+                        $remainingSpecial = $prize->special_number - $specialUsed;
+                        $remainingTotal = $prize->number_all - $prize->number_user;
+                        if ($remainingTotal <= 0) $remainingTotal = 1;
+
+                        if (mt_rand(1, $remainingTotal) <= $remainingSpecial) {
+                            $specialAmount = floatval($prize->special);
+                            
+                            // 检查奖金池是否足够支付特等奖
+                            if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
+                                $remainingPool = $prize->bonuses_pool - ($prize->used_amount ?? 0);
+                                if ($remainingPool < $specialAmount) {
+                                    // 奖池不足，无法发放特等奖
+                                    Db::rollback();
+                                    self::recordLog($user->openid, 0, 0, '特等奖奖池余额不足', ['lottery_id' => $prize->id, 'remaining' => $remainingPool, 'special' => $specialAmount]);
+                                    return [
+                                        'is_win' => 0,
+                                        'message' => '奖池余额不足'
+                                    ];
+                                }
                             }
+                            
+                            $actualAmount = $specialAmount;
+                            $amountStr = number_format($actualAmount, 2, '.', '');
+                            $isSpecial = true;
                         }
-                        
-                        $actualAmount = $specialAmount;
-                        $amountStr = number_format($actualAmount, 2, '.', '');
-                        $isSpecial = true;
                     }
                 }
 
