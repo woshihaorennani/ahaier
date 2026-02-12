@@ -4,6 +4,7 @@ namespace app\api\logic;
 use app\common\logic\BaseLogic;
 use app\common\model\marketing\Lottery;
 use app\common\model\marketing\LotteryRecord;
+use app\common\model\marketing\LotteryLog;
 use app\common\model\marketing\WeixinUser;
 use think\facade\Db;
 
@@ -20,6 +21,7 @@ class LotteryLogic extends BaseLogic
             // 1. 获取用户
             $user = WeixinUser::where('openid', $openidString)->find();
             if (!$user) {
+                self::recordLog($openidString, 0, 0, '用户不存在');
                 self::setError('用户不存在');
                 return false;
             }
@@ -39,6 +41,7 @@ class LotteryLogic extends BaseLogic
 
                 if (!$prize) {
                     Db::rollback();
+                    self::recordLog($user->openid, 0, 0, '今日奖品已派完');
                     return [
                         'is_win' => 0,
                         'message' => '今日奖品已派完'
@@ -55,6 +58,7 @@ class LotteryLogic extends BaseLogic
                         ->count();
                     if ($userWinCount >= $prize->can_win) {
                         Db::rollback();
+                        self::recordLog($user->openid, 0, 0, '您已达到今日中奖上限', ['lottery_id' => $prize->id]);
                         return [
                             'is_win' => 0,
                             'message' => '您已达到今日中奖上限'
@@ -66,8 +70,29 @@ class LotteryLogic extends BaseLogic
                 if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
                     $usedAmount = $prize->distributed_amount; // 直接使用字段值
                     
+                    // 自动修复：如果字段显示奖池已空或不足最小金额，则进行二次核对
+                    // 这种情况通常发生在历史数据存在精度漂移时
+                    $minPrize = floatval($prize->min);
+                    if ($usedAmount >= $prize->bonuses_pool || ($prize->bonuses_pool - $usedAmount) < $minPrize) {
+                        // 使用真实记录求和进行核对
+                        $realUsed = LotteryRecord::where('lottery_id', $prize->id)
+                            ->where('is_win', 1)
+                            ->sum('amount');
+                            
+                        // 如果真实记录显示还有余额
+                        if ($realUsed < $prize->bonuses_pool && ($prize->bonuses_pool - $realUsed) >= $minPrize) {
+                            // 修正数据库中的脏数据
+                            Lottery::where('id', $prize->id)->update(['distributed_amount' => $realUsed]);
+                            // 使用修正后的值
+                            $usedAmount = $realUsed;
+                            // 更新对象中的值，供后续逻辑使用
+                            $prize->distributed_amount = $realUsed;
+                        }
+                    }
+                    
                     if ($usedAmount >= $prize->bonuses_pool) {
                         Db::rollback();
+                         self::recordLog($user->openid, 0, 0, '奖池已空', ['lottery_id' => $prize->id]);
                          return [
                             'is_win' => 0,
                             'message' => '奖池已空'
@@ -88,6 +113,7 @@ class LotteryLogic extends BaseLogic
                     // 如果剩余金额连最小奖金都不够，直接返回未中奖
                     if ($remainingPool < $min) {
                         Db::rollback();
+                        self::recordLog($user->openid, 0, 0, '奖池余额不足', ['lottery_id' => $prize->id, 'remaining' => $remainingPool, 'min' => $min]);
                         return [
                             'is_win' => 0,
                             'message' => '奖池余额不足'
@@ -133,6 +159,7 @@ class LotteryLogic extends BaseLogic
                 // 如果金额太小（例如0），则视为未中奖或异常
                 if ($actualAmount <= 0) {
                      Db::rollback();
+                     self::recordLog($user->openid, 0, 0, '计算金额异常', ['lottery_id' => $prize->id, 'calc_amount' => $actualAmount]);
                      return [
                         'is_win' => 0,
                         'message' => '奖池已空'
@@ -147,6 +174,7 @@ class LotteryLogic extends BaseLogic
 
                 if (!$res) {
                     Db::rollback();
+                    self::recordLog($user->openid, $actualAmount, 0, '更新库存失败', ['lottery_id' => $prize->id]);
                     return [
                         'is_win' => 0,
                         'message' => '更新失败'
@@ -164,6 +192,8 @@ class LotteryLogic extends BaseLogic
                     'update_time' => time()
                 ]);
 
+                self::recordLog($user->openid, $actualAmount, 1, '中奖成功', ['lottery_id' => $prize->id], ['amount' => $amountStr]);
+
                 Db::commit();
 
                 return [
@@ -178,8 +208,36 @@ class LotteryLogic extends BaseLogic
             }
 
         } catch (\Exception $e) {
+            $logOpenid = isset($user) && $user ? $user->openid : $openidString;
+            self::recordLog($logOpenid, 0, 0, '抽奖异常:' . $e->getMessage());
             self::setError('抽奖失败:' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * @notes 记录日志
+     * @param $openid
+     * @param $money
+     * @param $status
+     * @param $message
+     * @param $params
+     * @param $result
+     */
+    private static function recordLog($openid, $money, $status, $message, $params = [], $result = [])
+    {
+        try {
+            LotteryLog::create([
+                'openid' => $openid,
+                'money' => $money,
+                'status' => $status,
+                'message' => $message,
+                'params' => json_encode($params, JSON_UNESCAPED_UNICODE),
+                'result' => json_encode($result, JSON_UNESCAPED_UNICODE),
+                'create_time' => time()
+            ]);
+        } catch (\Exception $e) {
+            // 日志记录失败忽略
         }
     }
 
