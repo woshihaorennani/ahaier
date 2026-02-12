@@ -103,58 +103,93 @@ class LotteryLogic extends BaseLogic
                 }
 
                 // 5. 计算中奖金额
-                $min = floatval($prize->min);
-                $max = floatval($prize->max);
+                $isSpecial = false;
+                $actualAmount = 0;
+                $amountStr = '0.00';
 
-                // 检查奖金池剩余金额
-                if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
-                    $remainingPool = $prize->bonuses_pool - ($prize->used_amount ?? 0);
+                // 优先检查特等奖
+                if (!empty($prize->special) && $prize->special > 0 && !empty($prize->special_number) && $prize->special_number > 0) {
+                    // 获取已中特等奖数量 (假设字段 special_user 存在)
+                    $specialUsed = $prize->special_user ?? 0;
                     
-                    // 如果剩余金额连最小奖金都不够，直接返回未中奖
-                    if ($remainingPool < $min) {
-                        Db::rollback();
-                        self::recordLog($user->openid, 0, 0, '奖池余额不足', ['lottery_id' => $prize->id, 'remaining' => $remainingPool, 'min' => $min]);
-                        return [
-                            'is_win' => 0,
-                            'message' => '奖池余额不足'
-                        ];
+                    if ($specialUsed < $prize->special_number) {
+                        $specialAmount = floatval($prize->special);
+                        
+                        // 检查奖金池是否足够支付特等奖
+                        if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
+                            $remainingPool = $prize->bonuses_pool - ($prize->used_amount ?? 0);
+                            if ($remainingPool < $specialAmount) {
+                                // 奖池不足，无法发放特等奖
+                                Db::rollback();
+                                self::recordLog($user->openid, 0, 0, '特等奖奖池余额不足', ['lottery_id' => $prize->id, 'remaining' => $remainingPool, 'special' => $specialAmount]);
+                                return [
+                                    'is_win' => 0,
+                                    'message' => '奖池余额不足'
+                                ];
+                            }
+                        }
+                        
+                        $actualAmount = $specialAmount;
+                        $amountStr = number_format($actualAmount, 2, '.', '');
+                        $isSpecial = true;
                     }
+                }
 
-                    // 动态调整最大金额，确保 number_all 都能中出
-                    if ($prize->number_all > 0) {
-                        $remainingCount = $prize->number_all - $prize->number_user; // 剩余数量（含本次）
+                if (!$isSpecial) {
+                    // 普通奖项逻辑
+                    $min = floatval($prize->min);
+                    $max = floatval($prize->max);
+
+                    // 检查奖金池剩余金额
+                    if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
+                        $remainingPool = $prize->bonuses_pool - ($prize->used_amount ?? 0);
                         
-                        // 为后续每个人预留最少金额 min
-                        $reservedForOthers = max(0, ($remainingCount - 1) * $min);
-                        
-                        // 本次允许的最大金额 = 剩余奖金 - 预留金额
-                        $safeMax = $remainingPool - $reservedForOthers;
-                        
-                        // 确保最大值不超过 safeMax，同时保证至少能发出 min
-                        // 优先保证当前用户能拿到 min (因为 remainingPool >= min 已校验)
-                        // 如果 safeMax < min，说明奖池紧张，无法完全保证后续用户，但当前用户必须满足 >= min
-                        $calculatedMax = min($max, $safeMax);
-                        $max = max($min, $calculatedMax);
-                    } else {
-                        // 如果没有总数量限制，则最大值受限于剩余奖金池
-                        $max = min($max, $remainingPool);
+                        // 如果剩余金额连最小奖金都不够，直接返回未中奖
+                        if ($remainingPool < $min) {
+                            Db::rollback();
+                            self::recordLog($user->openid, 0, 0, '奖池余额不足', ['lottery_id' => $prize->id, 'remaining' => $remainingPool, 'min' => $min]);
+                            return [
+                                'is_win' => 0,
+                                'message' => '奖池余额不足'
+                            ];
+                        }
+
+                        // 动态调整最大金额，确保 number_all 都能中出
+                        if ($prize->number_all > 0) {
+                            $remainingCount = $prize->number_all - $prize->number_user; // 剩余数量（含本次）
+                            
+                            // 为后续每个人预留最少金额 min
+                            $reservedForOthers = max(0, ($remainingCount - 1) * $min);
+                            
+                            // 本次允许的最大金额 = 剩余奖金 - 预留金额
+                            $safeMax = $remainingPool - $reservedForOthers;
+                            
+                            // 确保最大值不超过 safeMax，同时保证至少能发出 min
+                            // 优先保证当前用户能拿到 min (因为 remainingPool >= min 已校验)
+                            // 如果 safeMax < min，说明奖池紧张，无法完全保证后续用户，但当前用户必须满足 >= min
+                            $calculatedMax = min($max, $safeMax);
+                            $max = max($min, $calculatedMax);
+                        } else {
+                            // 如果没有总数量限制，则最大值受限于剩余奖金池
+                            $max = min($max, $remainingPool);
+                        }
                     }
+                    
+                    // 生成随机金额，保留2位小数
+                    if ($max <= $min) {
+                        $randomAmount = $min;
+                    } else {
+                        $randomAmount = $min + mt_rand() / mt_getrandmax() * ($max - $min);
+                    }
+                    
+                    // 兜底检查：确保不超过剩余奖金池
+                    if (isset($remainingPool) && $randomAmount > $remainingPool) {
+                        $randomAmount = $remainingPool;
+                    }
+                    
+                    $amountStr = number_format($randomAmount, 2, '.', '');
+                    $actualAmount = floatval($amountStr);
                 }
-                
-                // 生成随机金额，保留2位小数
-                if ($max <= $min) {
-                    $randomAmount = $min;
-                } else {
-                    $randomAmount = $min + mt_rand() / mt_getrandmax() * ($max - $min);
-                }
-                
-                // 兜底检查：确保不超过剩余奖金池
-                if (isset($remainingPool) && $randomAmount > $remainingPool) {
-                    $randomAmount = $remainingPool;
-                }
-                
-                $amountStr = number_format($randomAmount, 2, '.', '');
-                $actualAmount = floatval($amountStr);
                 
                 // 如果金额太小（例如0），则视为未中奖或异常
                 if ($actualAmount <= 0) {
@@ -167,10 +202,15 @@ class LotteryLogic extends BaseLogic
                 }
 
                 // 更新奖品库存和已发放金额
-                $res = Lottery::where('id', $prize->id)
+                $updateQuery = Lottery::where('id', $prize->id)
                     ->inc('number_user')
-                    ->inc('distributed_amount', $actualAmount)
-                    ->update();
+                    ->inc('distributed_amount', $actualAmount);
+                
+                if ($isSpecial) {
+                    $updateQuery->inc('special_user');
+                }
+
+                $res = $updateQuery->update();
 
                 if (!$res) {
                     Db::rollback();
