@@ -19,7 +19,7 @@ class LotteryLogic extends BaseLogic
     public static function draw($openidString)
     {
         try {
-            $openidString = "local_test_openid";
+            // $openidString = "local_test_openid";
             // 1. 获取用户
             $user = WeixinUser::where('openid', $openidString)->find();
             if (!$user) {

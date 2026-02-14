@@ -9,7 +9,7 @@ if len(sys.argv) > 1:
     URL = sys.argv[1]
     
 CONCURRENCY = 20
-TOTAL_REQUESTS = 500
+TOTAL_REQUESTS = 600
 
 def draw_lottery(i):
     try:
