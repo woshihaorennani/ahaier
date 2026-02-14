@@ -25,7 +25,7 @@
             <el-form-item label="特等奖数量" prop="special_number">
                 <el-input-number v-model="formData.special_number" :min="0" :precision="0" />
             </el-form-item>
-            <el-form-item label="中奖区间" required>
+            <el-form-item label="随机红包金额" required>
                 <div class="flex items-center">
                     <el-form-item prop="min">
                         <el-input-number v-model="formData.min" :min="0" :precision="2" placeholder="最小值" />

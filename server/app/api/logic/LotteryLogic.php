@@ -7,6 +7,7 @@ use app\common\model\marketing\LotteryRecord;
 use app\common\model\marketing\LotteryLog;
 use app\common\model\marketing\WeixinUser;
 use think\facade\Db;
+use think\facade\Cache;
 
 class LotteryLogic extends BaseLogic
 {
@@ -18,6 +19,7 @@ class LotteryLogic extends BaseLogic
     public static function draw($openidString)
     {
         try {
+            $openidString = "local_test_openid";
             // 1. 获取用户
             $user = WeixinUser::where('openid', $openidString)->find();
             if (!$user) {
@@ -26,27 +28,66 @@ class LotteryLogic extends BaseLogic
                 return false;
             }
 
+            // 2. 预查询今日奖品 (不加锁，用于快速失败和获取ID)
+            $today = date('Y-m-d');
+            $prePrize = Lottery::where('dates', $today)
+                ->whereRaw('number_all > number_user')
+                ->limit(1)
+                ->find();
 
-            // 开启事务 (针对高并发，提前开启事务并加锁)
-            Db::startTrans();
-            try {
-                // 2. 查询今日可用奖品
-                $today = date('Y-m-d');
-                // 查询当天有库存的奖品，并加锁 (lock for update)
-                $prize = Lottery::where('dates', $today)
-                    ->whereRaw('number_all > number_user')
-                    ->limit(1)
-                    ->lock(true)
-                    ->find();
+            if (!$prePrize) {
+                self::recordLog($user->openid, 0, 0, '今日奖品已派完');
+                return [
+                    'is_win' => 0,
+                    'message' => '今日奖品已派完'
+                ];
+            }
 
-                if (!$prize) {
-                    Db::rollback();
-                    self::recordLog($user->openid, 0, 0, '今日奖品已派完');
+            // 2.1 预校验用户限额 (减少无效抢锁)
+            if (isset($prePrize->can_win) && $prePrize->can_win > 0) {
+                $userWinCount = LotteryRecord::where('openid', $user->openid)
+                    ->where('lottery_id', $prePrize->id)
+                    ->where('is_win', 1)
+                    ->count();
+                if ($userWinCount >= $prePrize->can_win) {
+                    self::recordLog($user->openid, 0, 0, '您已达到今日中奖上限', ['lottery_id' => $prePrize->id]);
                     return [
                         'is_win' => 0,
-                        'message' => '今日奖品已派完'
+                        'message' => '您已达到今日中奖上限'
                     ];
                 }
+            }
+
+            // Redis锁 (使用 lottery_id 细化锁粒度)
+            $lockKey = 'lottery_draw_lock_' . $prePrize->id;
+            $token = uniqid('', true);
+            $redis = Cache::store('redis')->handler();
+
+            // 尝试获取锁，超时时间5秒
+            $isLock = $redis->set($lockKey, $token, ['NX', 'EX' => 5]);
+
+            if (!$isLock) {
+                self::setError('参与人数过多，请稍后重试');
+                return false;
+            }
+
+            try {
+                // 开启事务
+                Db::startTrans();
+                try {
+                    // 3. 二次查询今日可用奖品 (确保数据最新)
+                    $prize = Lottery::where('id', $prePrize->id)
+                        ->whereRaw('number_all > number_user')
+                        ->find();
+
+                    if (!$prize) {
+                        Db::rollback();
+                        self::recordLog($user->openid, 0, 0, '今日奖品已派完');
+                        return [
+                            'is_win' => 0,
+                            'message' => '今日奖品已派完'
+                        ];
+                    }
 
                 // 3. 校验奖品条件（用户限额、奖金池）
                 
@@ -208,9 +249,17 @@ class LotteryLogic extends BaseLogic
                     ];
                 }
 
-                // 更新奖品库存和已发放金额
+                // 更新奖品库存和已发放金额 (使用乐观锁)
                 $updateQuery = Lottery::where('id', $prize->id)
-                    ->inc('number_user')
+                    ->whereRaw('number_user < number_all'); // 确保库存未超
+
+                if (isset($prize->bonuses_pool) && $prize->bonuses_pool > 0) {
+                     // 确保奖金池未超 (注意：这里直接用 distributed_amount + actualAmount <= bonuses_pool)
+                     // 由于 float 精度问题，建议转为整数或留余量，这里简单处理
+                     $updateQuery->whereRaw('distributed_amount + ? <= bonuses_pool', [$actualAmount]);
+                }
+                    
+                $updateQuery->inc('number_user')
                     ->inc('distributed_amount', $actualAmount);
                 
                 if ($isSpecial) {
@@ -220,11 +269,12 @@ class LotteryLogic extends BaseLogic
                 $res = $updateQuery->update();
 
                 if (!$res) {
+                    // 更新失败，说明乐观锁生效（库存不足或奖池不足）
                     Db::rollback();
-                    self::recordLog($user->openid, $actualAmount, 0, '更新库存失败', ['lottery_id' => $prize->id]);
+                    self::recordLog($user->openid, $actualAmount, 0, '更新库存失败(并发冲突)', ['lottery_id' => $prize->id]);
                     return [
                         'is_win' => 0,
-                        'message' => '更新失败'
+                        'message' => '很遗憾，奖品刚被领完'
                     ];
                 }
 
@@ -253,6 +303,13 @@ class LotteryLogic extends BaseLogic
                 Db::rollback();
                 throw $e;
             }
+        } finally {
+            // 释放锁 (使用 Lua 脚本保证原子性)
+            if (isset($redis)) {
+                $script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+                $redis->eval($script, [$lockKey, $token], 1);
+            }
+        }
 
         } catch (\Exception $e) {
             $logOpenid = isset($user) && $user ? $user->openid : $openidString;

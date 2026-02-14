@@ -43,7 +43,7 @@
                     </template>
                 </el-table-column>
                 <el-table-column label="特等奖数量" prop="special_number" min-width="80" />
-                <el-table-column label="中奖区间" min-width="120">
+                <el-table-column label="随机红包金额" min-width="120">
                     <template #default="{ row }">
                         ¥{{ row.min }} - ¥{{ row.max }}
                     </template>
