@@ -4,12 +4,12 @@ import time
 
 import sys
 
-URL = "http://localhost/api/lottery/draw"
+URL = "https://haier.shwdsg.com/api/lottery/draw"
 if len(sys.argv) > 1:
     URL = sys.argv[1]
     
 CONCURRENCY = 20
-TOTAL_REQUESTS = 20
+TOTAL_REQUESTS = 500
 
 def draw_lottery(i):
     try:

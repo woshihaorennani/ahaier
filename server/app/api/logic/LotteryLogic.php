@@ -63,8 +63,18 @@ class LotteryLogic extends BaseLogic
             $token = uniqid('', true);
             $redis = Cache::store('redis')->handler();
 
-            // 尝试获取锁，超时时间5秒
-            $isLock = $redis->set($lockKey, $token, ['NX', 'EX' => 5]);
+            // 尝试获取锁，自旋重试机制
+            $isLock = false;
+            $retryCount = 20; // 重试20次
+            $retryInterval = 50000; // 50ms (微秒)
+
+            for ($i = 0; $i < $retryCount; $i++) {
+                $isLock = $redis->set($lockKey, $token, ['NX', 'EX' => 5]);
+                if ($isLock) {
+                    break;
+                }
+                usleep($retryInterval);
+            }
 
             if (!$isLock) {
                 self::setError('参与人数过多，请稍后重试');
