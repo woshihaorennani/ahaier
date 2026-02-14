@@ -51,7 +51,7 @@ class WeixinUserLists extends BaseAdminDataLists implements ListsSearchInterface
     {
         if (isset($this->params['is_from']) && $this->params['is_from'] !== '') {
             if ($this->params['is_from'] == 1) {
-                $where[] = ['is_from', 'not null', ''];
+                $where[] = ['is_from', '>', 0];
             } else {
                 $where[] = ['is_from', 'null', ''];
             }
