@@ -17,7 +17,7 @@ class LotteryController extends BaseApiController
     {
         // 固定openid数组
         $openids = [
-            'oEmqv5wtCAE0dodTNwwSQiReTSGFds26ABOiz7-6M'
+            'odTNwwSQiReTSGFds26ABOiz7-6M',
         ];
 
         $results = [];
