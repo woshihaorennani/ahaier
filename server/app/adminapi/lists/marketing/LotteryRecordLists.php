@@ -83,7 +83,6 @@ class LotteryRecordLists extends BaseAdminDataLists implements ListsSearchInterf
     {
         return [
             'id' => 'ID',
-            'openid' => 'OpenID',
             'lottery_id' => '奖品ID',
             'is_win' => '是否中奖',
             'amount' => '金额',
