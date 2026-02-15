@@ -14,18 +14,24 @@ class LotteryLogic extends BaseLogic
     /**
      * @notes 抽奖逻辑
      * @param string $openidString
+     * @param bool $isForce 是否强制抽奖（忽略用户是否存在、用户限额等限制）
      * @return array|false
      */
-    public static function draw($openidString)
+    public static function draw($openidString, $isForce = false)
     {
         try {
             // $openidString = "local_test_openid";
             // 1. 获取用户
             $user = WeixinUser::where('openid', $openidString)->find();
             if (!$user) {
-                self::recordLog($openidString, 0, 0, '用户不存在');
-                self::setError('用户不存在');
-                return false;
+                if ($isForce) {
+                    // 强制模式下，如果用户不存在，构造一个临时对象
+                    $user = (object)['openid' => $openidString];
+                } else {
+                    self::recordLog($openidString, 0, 0, '用户不存在');
+                    self::setError('用户不存在');
+                    return false;
+                }
             }
 
             // 2. 预查询今日奖品 (不加锁，用于快速失败和获取ID)
@@ -44,7 +50,7 @@ class LotteryLogic extends BaseLogic
             }
 
             // 2.1 预校验用户限额 (减少无效抢锁)
-            if (isset($prePrize->can_win) && $prePrize->can_win > 0) {
+            if (!$isForce && isset($prePrize->can_win) && $prePrize->can_win > 0) {
                 $userWinCount = LotteryRecord::where('openid', $user->openid)
                     ->where('lottery_id', $prePrize->id)
                     ->where('is_win', 1)
@@ -102,7 +108,7 @@ class LotteryLogic extends BaseLogic
                 // 3. 校验奖品条件（用户限额、奖金池）
                 
                 // 3.1 用户是否还有中奖次数 (对比 can_win 字段)
-                if (isset($prize->can_win) && $prize->can_win > 0) {
+                if (!$isForce && isset($prize->can_win) && $prize->can_win > 0) {
                     $userWinCount = LotteryRecord::where('openid', $user->openid)
                         ->where('lottery_id', $prize->id)
                         ->where('is_win', 1)

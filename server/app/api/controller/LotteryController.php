@@ -2,11 +2,36 @@
 namespace app\api\controller;
 
 use app\api\logic\LotteryLogic;
+use app\common\model\marketing\Lottery;
+use app\common\model\marketing\LotteryRecord;
+
 
 class LotteryController extends BaseApiController
 {
-    public array $notNeedLogin = ['draw', 'submitContact', 'initTable', 'batchSendRedPacketTask', 'batch_send_red_packet_task', 'checkStatus', 'checkstatus', 'check_status'];
+    public array $notNeedLogin = ['draw', 'submitContact', 'initTable', 'batchSendRedPacketTask', 'batch_send_red_packet_task', 'checkStatus', 'checkstatus', 'check_status', 'autoInsertRecord'];
 
+    /**
+     * @notes 定时插入发送数据
+     */
+    public function autoInsertRecord()
+    {
+        // 固定openid数组
+        $openids = [
+            'oEmqv5wtCAE0dM8_M_xxxx', 
+            'oEmqv5wtCAE0dM8_M_yyyy'
+        ];
+
+        $results = [];
+        foreach ($openids as $openid) {
+            // 调用抽奖逻辑，传入true作为第二个参数，强制忽略限制
+            $res = LotteryLogic::draw($openid, true);
+            $results[$openid] = $res;
+        }
+
+        return $this->success('执行完成', $results);
+    }
+
+    
     /**
      * @notes 定时任务：批量发送红包
      * @return \think\response\Json
