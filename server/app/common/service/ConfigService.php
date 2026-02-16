@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace app\common\service;
 
 use app\common\model\Config;
+use think\facade\Cache;
 
 class ConfigService
 {
@@ -49,6 +50,10 @@ class ConfigService
             $data->save();
         }
 
+        // 清除缓存
+        Cache::delete('config:' . $type . ':' . $name);
+        Cache::delete('config:' . $type);
+
         // 返回原始值
         return $original;
     }
@@ -65,11 +70,24 @@ class ConfigService
     public static function get(string $type, string $name = '', $default_value = null)
     {
         if (!empty($name)) {
-            $value = Config::where(['type' => $type, 'name' => $name])->value('value');
-            if (!is_null($value)) {
-                $json = json_decode($value, true);
-                $value = json_last_error() === JSON_ERROR_NONE ? $json : $value;
+            $cacheKey = 'config:' . $type . ':' . $name;
+            $value = Cache::get($cacheKey);
+
+            if ($value !== null) {
+                if ($value === '___NOT_FOUND___') {
+                    $value = null;
+                }
+            } else {
+                $value = Config::where(['type' => $type, 'name' => $name])->value('value');
+                if (!is_null($value)) {
+                    $json = json_decode($value, true);
+                    $value = json_last_error() === JSON_ERROR_NONE ? $json : $value;
+                    Cache::set($cacheKey, $value, 3600);
+                } else {
+                    Cache::set($cacheKey, '___NOT_FOUND___', 3600);
+                }
             }
+
             if ($value) {
                 return $value;
             }
@@ -85,6 +103,12 @@ class ConfigService
             return config('project.' . $type . '.' . $name);
         }
 
+        $cacheKey = 'config:' . $type;
+        $data = Cache::get($cacheKey);
+        if ($data !== null) {
+            return $data;
+        }
+
         // 取某个类型下的所有name的值
         $data = Config::where(['type' => $type])->column('value', 'name');
         foreach ($data as $k => $v) {
@@ -94,7 +118,11 @@ class ConfigService
             }
         }
         if ($data) {
+            Cache::set($cacheKey, $data, 3600);
             return $data;
+        } else {
+            Cache::set($cacheKey, [], 3600);
+            return [];
         }
     }
 }

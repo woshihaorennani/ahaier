@@ -19,6 +19,9 @@ use think\facade\Cache;
 class FileService
 {
 
+    protected static $storageDefault = null;
+    protected static $storageEngine = null;
+
     /**
      * @notes 补全路径
      * @param string $uri
@@ -44,11 +47,10 @@ class FileService
         if (strstr($uri, 'http://'))  return $uri;
         if (strstr($uri, 'https://')) return $uri;
 
-        $default = Cache::get('STORAGE_DEFAULT');
-        if (!$default) {
-            $default = ConfigService::get('storage', 'default', 'local');
-            Cache::set('STORAGE_DEFAULT', $default);
+        if (self::$storageDefault === null) {
+            self::$storageDefault = ConfigService::get('storage', 'default', 'local');
         }
+        $default = self::$storageDefault;
 
         if ($default === 'local') {
             if($type == 'public_path') {
@@ -56,11 +58,10 @@ class FileService
             }
             $domain = request()->domain();
         } else {
-            $storage = Cache::get('STORAGE_ENGINE');
-            if (!$storage) {
-                $storage = ConfigService::get('storage', $default);
-                Cache::set('STORAGE_ENGINE', $storage);
+            if (self::$storageEngine === null) {
+                self::$storageEngine = ConfigService::get('storage', $default);
             }
+            $storage = self::$storageEngine;
             $domain = $storage ?  $storage['domain'] : '';
         }
 
