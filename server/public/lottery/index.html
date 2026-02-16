@@ -188,33 +188,41 @@
                 });
         }
 
-        // Check if openid exists
-        let openid = getQueryParam('u_openid');
+        // Check time 9:00 - 23:59
+        var now = new Date();
+        var hour = now.getHours();
+        let openid;
+        if (hour < 9) {
+            showToast('活动时间为每日 9:00 - 23:59');
+        }else {
+            // Check if openid exists
+            openid = getQueryParam('u_openid');
 
-        if (openid) {
-            // If openid is in URL, save it to localStorage
-            localStorage.setItem('u_openid', openid);
-        } else {
-            // If not in URL, check localStorage
-            openid = localStorage.getItem('u_openid');
-        }
+            if (openid) {
+                // If openid is in URL, save it to localStorage
+                localStorage.setItem('u_openid', openid);
+            } else {
+                // If not in URL, check localStorage
+                openid = localStorage.getItem('u_openid');
+            }
 
-        // Local development check
-        if (!openid && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-             openid = 'local_test_openid';
-             localStorage.setItem('u_openid', openid);
-             console.log('Local environment detected, using default OpenID:', openid);
-        }
+            // Local development check
+            if (!openid && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+                openid = 'local_test_openid';
+                localStorage.setItem('u_openid', openid);
+                console.log('Local environment detected, using default OpenID:', openid);
+            }
 
-        if (openid) {
-            // 只要有openid，就同步用户数据
-            syncUser(openid);
-            
-            console.log('OpenID retrieved:', openid);
-            checkUserStatus(openid);
-        } else {
-            // If no openid found, redirect to auth
-            redirectToAuth();
+            if (openid) {
+                // 只要有openid，就同步用户数据
+                syncUser(openid);
+                
+                console.log('OpenID retrieved:', openid);
+                checkUserStatus(openid);
+            } else {
+                // If no openid found, redirect to auth
+                redirectToAuth();
+            }
         }
 
         // Check user status (win record and contact info)
