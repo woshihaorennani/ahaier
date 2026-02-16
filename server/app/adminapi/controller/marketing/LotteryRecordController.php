@@ -18,6 +18,7 @@ class LotteryRecordController extends BaseAdminController
      */
     public function lists()
     {
+        ini_set('memory_limit', '1024M');
         return $this->dataLists(new LotteryRecordLists());
     }
 }

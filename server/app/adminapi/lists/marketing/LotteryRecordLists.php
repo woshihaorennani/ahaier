@@ -16,6 +16,20 @@ use app\common\model\marketing\LotteryRecord;
 class LotteryRecordLists extends BaseAdminDataLists implements ListsSearchInterface, ListsSortInterface, ListsExcelInterface
 {
     /**
+     * @notes 构造方法
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        // 导出全部时，取消默认25000条限制，调整为50万
+        if ($this->pageType == 0) {
+            $this->pageSizeMax = 500000;
+            $this->pageSize = $this->pageSizeMax;
+            $this->limitLength = $this->pageSize;
+        }
+    }
+
+    /**
      * @notes 设置搜索条件
      * @return array
      */
