@@ -137,9 +137,23 @@ class WechatLogic extends BaseLogic
         try {
             $user = \app\common\model\marketing\WeixinUser::where('openid', $openid)->find();
             if ($user) {
-                $user->update_time = time();
-                $user->is_from = $is_from;
-                $user->save();
+                // Optimization: Reduce DB writes
+                // Only update if is_from changed OR it's been > 5 minutes since last update
+                $shouldSave = false;
+
+                if ($user->is_from !== $is_from) {
+                    $user->is_from = $is_from;
+                    $shouldSave = true;
+                }
+
+                if ($shouldSave || (time() - $user->update_time > 300)) {
+                    $user->update_time = time();
+                    $shouldSave = true;
+                }
+
+                if ($shouldSave) {
+                    $user->save();
+                }
             } else {
                 \app\common\model\marketing\WeixinUser::create([
                     'openid' => $openid,

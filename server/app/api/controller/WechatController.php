@@ -92,7 +92,7 @@ class WechatController extends BaseApiController
     public function syncUser()
     {
         $openid = $this->request->post('openid');
-        $is_from = $this->request->post('is_from', '');
+        $is_from = (string)$this->request->post('is_from', '');
         
         \think\facade\Log::info('syncUser API Call - OpenID: ' . $openid . ' | Source: ' . $is_from);
 
