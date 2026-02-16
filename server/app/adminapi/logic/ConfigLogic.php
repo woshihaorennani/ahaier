@@ -45,18 +45,29 @@ class ConfigLogic
      */
     public static function getConfig(): array
     {
+        // 1. 获取所有网站配置 (减少多次查询)
+        $websiteConfig = ConfigService::get('website');
+
+        // 2. 辅助函数：优先从数据库获取，没有则从本地配置获取
+        $getWebsite = function($key) use ($websiteConfig) {
+            if (isset($websiteConfig[$key]) && $websiteConfig[$key] !== '') {
+                return $websiteConfig[$key];
+            }
+            return config('project.website.' . $key);
+        };
+
         $config = [
             // 文件域名
             'oss_domain' => FileService::getFileUrl(),
 
             // 网站名称
-            'web_name' => ConfigService::get('website', 'name'),
+            'web_name' => $getWebsite('name'),
             // 网站图标
-            'web_favicon' => FileService::getFileUrl(ConfigService::get('website', 'web_favicon')),
+            'web_favicon' => FileService::getFileUrl($getWebsite('web_favicon')),
             // 网站logo
-            'web_logo' => FileService::getFileUrl(ConfigService::get('website', 'web_logo')),
+            'web_logo' => FileService::getFileUrl($getWebsite('web_logo')),
             // 登录页
-            'login_image' => FileService::getFileUrl(ConfigService::get('website', 'login_image')),
+            'login_image' => FileService::getFileUrl($getWebsite('login_image')),
             // 版权信息
             'copyright_config' => ConfigService::get('copyright', 'config', []),
             // 版本号
