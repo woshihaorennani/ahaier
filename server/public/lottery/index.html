@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="./style.css?version=1.0.12">
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="pages1">
         <!-- Clear Cache Button -->
         <button id="clearCacheBtn" style="position: absolute; top: 10px; left: 10px; z-index: 1000; padding: 5px 10px; background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 4px; font-size: 12px;opacity: 0;">清除缓存</button>
 
@@ -186,6 +186,25 @@
                 .catch(error => {
                     console.error('Error fetching auth domain:', error);
                 });
+        }
+        
+        // 获取当前时间是多少号
+        function getCurrentDay() {
+            const now = new Date();
+            return now.getDate();
+        }
+
+        if (getCurrentDay() == 17 && getQueryParam('u_vopenid') != 'A9f3K2mQ8ZL7Xw5R0C1dEJp') {
+            showToast('活动链接错误，无法参与活动');
+            $('#pages1').hide();
+        }
+        if (getCurrentDay() == 18 && getQueryParam('u_vopenid') != '7MZxE4cP0L9Qy8F5A1JrVHd') {
+            showToast('活动链接错误，无法参与活动');
+            $('#pages1').hide();
+        }
+        if (getCurrentDay() == 19 && getQueryParam('u_vopenid') != 'K5E9X0rMZ8J1Fq6pH3Cw2A7') {
+            showToast('活动链接错误，无法参与活动');
+            $('#pages1').hide();
         }
 
         // Check time 9:00 - 23:59
