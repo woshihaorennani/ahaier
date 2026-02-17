@@ -143,14 +143,13 @@
 
         // Sync user data
         function syncUser(openid) {
-            let is_from = getQueryParam('is_from');
             // Call backend to sync user data
             fetch(`${API_DOMAIN}/api/wechat/syncUser`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ openid: openid, is_from: is_from })
+                body: JSON.stringify({ openid: openid })
             })
             .then(res => res.json())
             .then(data => {

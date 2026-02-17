@@ -30,8 +30,21 @@ class LotteryContactLists extends BaseAdminDataLists implements ListsExcelInterf
      */
     public function lists(): array
     {
-        return LotteryContact::where($this->searchWhere)
+        // 获取去重后的最新记录ID列表
+        $ids = LotteryContact::where($this->searchWhere)
+            ->group('openid')
+            ->field('max(id) as max_id')
+            ->order('max_id', 'desc')
             ->limit($this->limitOffset, $this->limitLength)
+            ->select()
+            ->column('max_id');
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        // 根据ID获取详细信息
+        return LotteryContact::where('id', 'in', $ids)
             ->order(['id' => 'desc'])
             ->select()
             ->toArray();
@@ -43,7 +56,7 @@ class LotteryContactLists extends BaseAdminDataLists implements ListsExcelInterf
      */
     public function count(): int
     {
-        return LotteryContact::where($this->searchWhere)->count();
+        return LotteryContact::where($this->searchWhere)->count('DISTINCT openid');
     }
 
     /**
